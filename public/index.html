@@ -13,12 +13,131 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #075e54 0%, #128c7e 100%);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* شاشة التسجيل */
+        .auth-screen {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .auth-screen h1 {
+            color: #075e54;
+            margin-bottom: 10px;
+            text-align: center;
+            font-size: 28px;
+        }
+
+        .auth-screen .subtitle {
+            color: #999;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #333;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #075e54;
+            box-shadow: 0 0 0 3px rgba(7, 94, 84, 0.1);
+        }
+
+        .error {
+            color: #f44336;
+            font-size: 13px;
+            margin-top: 5px;
+        }
+
+        .success {
+            color: #4caf50;
+            font-size: 13px;
+            margin-top: 5px;
+        }
+
+        .button {
+            width: 100%;
+            padding: 12px;
+            background: #075e54;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-top: 10px;
+        }
+
+        .button:hover {
+            background: #054d43;
+        }
+
+        .button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .toggle-mode {
+            text-align: center;
+            margin-top: 20px;
+            color: #999;
+            font-size: 14px;
+        }
+
+        .toggle-mode button {
+            background: none;
+            border: none;
+            color: #075e54;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: underline;
+        }
+
+        /* الواجهة الرئيسية */
+        body.authenticated {
             background: #f0f0f0;
+        }
+
+        .main-app {
+            display: none;
+            width: 100%;
             height: 100vh;
             display: flex;
         }
 
-        /* الشريط الجانبي */
+        .main-app.show {
+            display: flex;
+        }
+
         .sidebar {
             width: 30%;
             background: white;
@@ -40,9 +159,25 @@
             margin-bottom: 5px;
         }
 
-        .sidebar-header .device-info {
+        .sidebar-header .user-info {
             font-size: 12px;
             opacity: 0.9;
+            cursor: pointer;
+        }
+
+        .sidebar-header .logout {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+
+        .sidebar-header .logout:hover {
+            background: rgba(255,255,255,0.3);
         }
 
         .contacts-list {
@@ -97,23 +232,19 @@
             color: #999;
         }
 
-        .status-online::before {
-            content: "🟢";
-            margin-left: 5px;
+        .status-online::after {
+            content: " 🟢";
         }
 
-        .status-offline::before {
-            content: "⚪";
-            margin-left: 5px;
+        .status-offline::after {
+            content: " ⚪";
         }
 
-        /* المنطقة الرئيسية */
         .main-area {
             flex: 1;
             display: flex;
             flex-direction: column;
             background: white;
-            position: relative;
         }
 
         .header {
@@ -130,18 +261,53 @@
             font-size: 20px;
         }
 
-        .header-status {
-            font-size: 12px;
-            opacity: 0.9;
-        }
-
-        /* منطقة الملفات */
         .content {
             flex: 1;
             display: flex;
             flex-direction: column;
             padding: 25px;
             overflow-y: auto;
+        }
+
+        .welcome-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            text-align: center;
+        }
+
+        .welcome-section h2 {
+            color: #075e54;
+            font-size: 24px;
+        }
+
+        .add-contact-form {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .add-contact-form input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .add-contact-form button {
+            padding: 12px 25px;
+            background: #075e54;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
         }
 
         .drop-zone {
@@ -176,11 +342,6 @@
             margin-bottom: 10px;
         }
 
-        .file-input {
-            display: none;
-        }
-
-        /* الإشعارات */
         .notifications {
             position: fixed;
             top: 20px;
@@ -218,111 +379,6 @@
             }
         }
 
-        /* قائمة الملفات المعلقة */
-        .pending-files {
-            margin-bottom: 20px;
-            background: #fff3cd;
-            padding: 15px;
-            border-radius: 8px;
-            border-right: 4px solid #ffc107;
-        }
-
-        .pending-files h3 {
-            color: #856404;
-            margin-bottom: 10px;
-            font-size: 14px;
-        }
-
-        .pending-file {
-            padding: 10px;
-            background: white;
-            margin: 5px 0;
-            border-radius: 4px;
-            font-size: 13px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .pending-file .icon {
-            font-size: 18px;
-        }
-
-        /* الشاشة الأولية */
-        .welcome-screen {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .welcome-screen h2 {
-            color: #075e54;
-            font-size: 24px;
-        }
-
-        .device-form {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            width: 100%;
-        }
-
-        .device-form input {
-            flex: 1;
-            padding: 12px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            font-size: 14px;
-        }
-
-        .device-form button {
-            padding: 12px 25px;
-            background: #075e54;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 500;
-            transition: background 0.3s;
-        }
-
-        .device-form button:hover {
-            background: #054d43;
-        }
-
-        .pairing-code {
-            background: #f5f5f5;
-            padding: 20px;
-            border-radius: 8px;
-            text-align: center;
-            margin: 20px 0;
-        }
-
-        .pairing-code-label {
-            color: #999;
-            font-size: 12px;
-            margin-bottom: 10px;
-        }
-
-        .code {
-            font-family: monospace;
-            font-size: 24px;
-            font-weight: bold;
-            color: #075e54;
-            letter-spacing: 2px;
-            cursor: pointer;
-            padding: 10px;
-            border: 2px dashed #075e54;
-            border-radius: 6px;
-        }
-
-        .code:hover {
-            background: #e8f5e9;
-        }
-
-        /* الاستجابة للهواتف */
         @media (max-width: 768px) {
             body {
                 flex-direction: column;
@@ -339,76 +395,100 @@
                 height: 70%;
             }
 
-            .notifications {
-                max-width: calc(100% - 40px);
+            .add-contact-form {
+                flex-direction: column;
+            }
+
+            .auth-screen {
+                border-radius: 0;
             }
         }
     </style>
 </head>
 <body>
-    <!-- الشريط الجانبي -->
-    <div class="sidebar">
-        <div class="sidebar-header">
-            <h2>🌐 AirRoom</h2>
-            <div class="device-info">
-                <span id="myDeviceName">إعدادات</span>
-                <br>
-                <small id="myDeviceId"></small>
+    <!-- شاشة التسجيل -->
+    <div id="authScreen" class="auth-screen">
+        <h1>🌐 AirRoom</h1>
+        <p class="subtitle">مشاركة الملفات بسهولة</p>
+
+        <!-- قسم التسجيل الجديد -->
+        <div id="registerSection">
+            <div class="form-group">
+                <label for="usernameInput">اسم المستخدم (فريد)</label>
+                <input type="text" id="usernameInput" placeholder="مثال: أحمد_الجهاز" maxlength="30">
+                <div id="usernameError" class="error"></div>
+            </div>
+
+            <button class="button" onclick="registerNewUser()">تسجيل حساب جديد</button>
+
+            <div class="toggle-mode">
+                لديك حساب بالفعل؟
+                <button onclick="toggleMode()">تسجيل الدخول</button>
             </div>
         </div>
-        <div class="contacts-list" id="contactsList">
-            <div style="padding: 20px; text-align: center; color: #999;">
-                🔗 لا توجد جهات اتصال بعد
+
+        <!-- قسم تسجيل الدخول -->
+        <div id="loginSection" style="display: none;">
+            <p style="color: #999; text-align: center; margin-bottom: 20px;">
+                معرّف الجهاز الخاص بك:
+            </p>
+            <div class="form-group">
+                <label for="deviceIdInput">معرّف الجهاز</label>
+                <input type="text" id="deviceIdInput" placeholder="الصق معرّفك هنا">
+                <div id="loginError" class="error"></div>
+            </div>
+
+            <button class="button" onclick="loginUser()">دخول</button>
+
+            <div class="toggle-mode">
+                ليس لديك حساب؟
+                <button onclick="toggleMode()">تسجيل جديد</button>
             </div>
         </div>
     </div>
 
-    <!-- المنطقة الرئيسية -->
-    <div class="main-area">
-        <div class="header">
-            <h1 id="headerTitle">مرحباً بك في AirRoom</h1>
-            <div id="headerStatus" class="header-status"></div>
-        </div>
-
-        <div class="content" id="content">
-            <!-- الشاشة الأولية -->
-            <div id="welcomeScreen" class="welcome-screen">
-                <h2>🚀 ابدأ الآن</h2>
-                <p style="color: #999; text-align: center;">أدخل اسم جهازك لبدء المشاركة</p>
-                
-                <div class="device-form">
-                    <input type="text" id="deviceNameInput" placeholder="اسم الجهاز (مثال: جهازي الشخصي)" value="جهازي">
-                    <button onclick="setupDevice()">تم</button>
+    <!-- التطبيق الرئيسي -->
+    <div id="mainApp" class="main-app">
+        <!-- الشريط الجانبي -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>🌐 AirRoom</h2>
+                <div class="user-info">
+                    👤 <span id="currentUsername">Loading...</span>
                 </div>
-
-                <div class="pairing-code">
-                    <div class="pairing-code-label">معرّف الاقتران</div>
-                    <div class="code" id="pairingCode" onclick="copyCode()" title="انقر للنسخ">
-                        ⏳ جاري التحضير...
-                    </div>
-                    <p style="color: #999; font-size: 12px; margin-top: 10px;">
-                        شارك هذا المعرّف مع الأجهزة الأخرى للاتصال
-                    </p>
-                </div>
-
-                <div style="text-align: center; color: #075e54; font-size: 14px;">
-                    أم تريد الاتصال بجهاز آخر؟
-                </div>
-                <div class="device-form">
-                    <input type="text" id="pairingInput" placeholder="معرّف الاقتران">
-                    <button onclick="connectToPeer()">اتصل</button>
+                <button class="logout" onclick="logout()">🚪 خروج</button>
+            </div>
+            <div class="contacts-list" id="contactsList">
+                <div style="padding: 20px; text-align: center; color: #999;">
+                    🔗 لا توجد جهات اتصال بعد
                 </div>
             </div>
+        </div>
 
-            <!-- منطقة الملفات -->
-            <div id="fileArea" style="display: none; flex: 1; display: flex; flex-direction: column;">
-                <div id="pendingFilesContainer"></div>
-                
-                <div class="drop-zone" id="dropZone">
-                    <div class="drop-zone-icon">📁</div>
-                    <div class="drop-zone-text">
-                        <h2>اسحب الملفات هنا</h2>
-                        <p>أو اضغط للاختيار</p>
+        <!-- المنطقة الرئيسية -->
+        <div class="main-area">
+            <div class="header">
+                <h1 id="headerTitle">مرحباً بك في AirRoom</h1>
+            </div>
+
+            <div class="content" id="content">
+                <div class="welcome-section">
+                    <h2>🚀 أضف جهة اتصال</h2>
+                    <p style="color: #999;">ابحث عن صديق باسم المستخدم وابدأ المشاركة</p>
+                    
+                    <div class="add-contact-form">
+                        <input type="text" id="searchUsername" placeholder="أدخل اسم المستخدم">
+                        <button onclick="addContact()">ربط</button>
+                    </div>
+
+                    <div id="fileAreaContainer" style="display: none; width: 100%; flex: 1;">
+                        <div class="drop-zone" id="dropZone">
+                            <div class="drop-zone-icon">📁</div>
+                            <div class="drop-zone-text">
+                                <h2>اسحب الملفات هنا</h2>
+                                <p>أو اضغط للاختيار</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -418,114 +498,215 @@
     <!-- الإشعارات -->
     <div class="notifications" id="notificationsContainer"></div>
 
-    <input type="file" id="fileInput" class="file-input" multiple>
+    <input type="file" id="fileInput" class="file-input" multiple style="display: none;">
 
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script>
         let socket;
-        let myDeviceId;
-        let myDeviceName;
+        let currentUserId;
+        let currentUsername;
+        let currentDeviceId;
         let selectedContactId;
-        let connectedPeerId;
+        let selectedContactUsername;
 
         // ─────────────────────────────────────────────────────────────
-        // الاتصال بـ Socket.io
+        // التسجيل والدخول
+        // ─────────────────────────────────────────────────────────────
+
+        function registerNewUser() {
+            const username = document.getElementById('usernameInput').value.trim();
+            const errorDiv = document.getElementById('usernameError');
+
+            if (!username) {
+                errorDiv.textContent = "الرجاء إدخال اسم المستخدم";
+                return;
+            }
+
+            if (username.length < 3) {
+                errorDiv.textContent = "اسم المستخدم يجب أن يكون 3 أحرف على الأقل";
+                return;
+            }
+
+            socket.emit('register_new_user', { username }, (result) => {
+                if (result.success) {
+                    currentUserId = result.userId;
+                    currentUsername = result.username;
+                    currentDeviceId = result.deviceId;
+
+                    // احفظ في localStorage
+                    localStorage.setItem('deviceId', result.deviceId);
+                    localStorage.setItem('username', result.username);
+
+                    showApp();
+                    showNotification(`مرحباً ${result.username}! ✅`, 'success');
+                } else {
+                    errorDiv.textContent = result.error;
+                }
+            });
+        }
+
+        function loginUser() {
+            const deviceId = document.getElementById('deviceIdInput').value.trim();
+            const errorDiv = document.getElementById('loginError');
+
+            if (!deviceId) {
+                errorDiv.textContent = "الرجاء إدخال معرّف الجهاز";
+                return;
+            }
+
+            socket.emit('login_user', { deviceId }, (result) => {
+                if (result.success) {
+                    currentUserId = result.userId;
+                    currentUsername = result.username;
+                    currentDeviceId = deviceId;
+
+                    localStorage.setItem('deviceId', deviceId);
+                    localStorage.setItem('username', result.username);
+
+                    showApp();
+                    showNotification(`مرحباً ${result.username}! ✅`, 'success');
+                } else {
+                    errorDiv.textContent = result.error;
+                }
+            });
+        }
+
+        function toggleMode() {
+            document.getElementById('registerSection').style.display = 
+                document.getElementById('registerSection').style.display === 'none' ? 'block' : 'none';
+            document.getElementById('loginSection').style.display = 
+                document.getElementById('loginSection').style.display === 'none' ? 'block' : 'none';
+            document.getElementById('usernameError').textContent = '';
+            document.getElementById('loginError').textContent = '';
+        }
+
+        function logout() {
+            localStorage.removeItem('deviceId');
+            localStorage.removeItem('username');
+            location.reload();
+        }
+
+        function showApp() {
+            document.getElementById('authScreen').style.display = 'none';
+            document.getElementById('mainApp').classList.add('show');
+            document.getElementById('currentUsername').textContent = currentUsername;
+            loadContacts();
+            setupDropZone();
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        // Socket.io الأحداث
         // ─────────────────────────────────────────────────────────────
 
         socket = io();
 
-        socket.on('registered', ({ myId, myName }) => {
-            myDeviceId = myId;
-            myDeviceName = myName;
-            document.getElementById('myDeviceName').textContent = myName;
-            document.getElementById('myDeviceId').textContent = myId.slice(0, 12) + "…";
-            document.getElementById('pairingCode').textContent = myId;
-            document.getElementById('welcomeScreen').style.display = "flex";
+        socket.on('user_online', ({ userId, username }) => {
+            updateContactStatus(userId, true, username);
+            showNotification(`${username} متصل الآن 🟢`, 'success');
         });
 
-        // ─────────────────────────────────────────────────────────────
-        // إدارة الجهات الاتصال
-        // ─────────────────────────────────────────────────────────────
-
-        socket.on('contact_online', ({ deviceId, name }) => {
-            updateContactStatus(deviceId, true, name);
-            showNotification(`${name} متصل الآن 🟢`, 'success');
+        socket.on('user_offline', ({ userId, username }) => {
+            updateContactStatus(userId, false, username);
+            showNotification(`${username} قطع الاتصال ⚪`, 'error');
         });
 
-        socket.on('contact_offline', ({ deviceId, name }) => {
-            updateContactStatus(deviceId, false, name);
-            showNotification(`${name} قطع الاتصال ⚪`, 'error');
-        });
-
-        // ─────────────────────────────────────────────────────────────
-        // استقبال الملفات
-        // ─────────────────────────────────────────────────────────────
-
-        socket.on('receive_file', ({ senderDeviceId, senderName, fileName, fileData }) => {
+        socket.on('receive_file', ({ senderUsername, fileName, fileData }) => {
             downloadFile(fileData, fileName);
-            showNotification(`استقبل ملف من ${senderName}: ${fileName}`, 'success');
+            showNotification(`استقبل من ${senderUsername}: ${fileName}`, 'success');
         });
 
-        socket.on('receive_pending_file', ({ fileName, senderDeviceId, fileData }) => {
+        socket.on('receive_pending_file', ({ fileName, fileData }) => {
             downloadFile(fileData, fileName);
-            showNotification(`ملف معلق تم استقباله: ${fileName}`, 'success');
+            showNotification(`ملف معلق: ${fileName}`, 'success');
         });
 
-        socket.on('file_queued', ({ recipientDeviceId, fileName }) => {
-            showNotification(`${fileName} في قائمة الانتظار 📋`, 'success');
-            refreshPendingFiles();
-        });
-
-        socket.on('file_delivered', ({ recipientDeviceId, fileName }) => {
+        socket.on('file_sent_success', ({ recipientDeviceId, fileName }) => {
             showNotification(`تم إرسال ${fileName} بنجاح ✅`, 'success');
         });
 
+        socket.on('file_queued', ({ recipientUserId, fileName }) => {
+            showNotification(`${fileName} في قائمة الانتظار 📋`, 'success');
+        });
+
+        socket.on('user_added_as_contact', ({ userId, username }) => {
+            showNotification(`${username} أضافك كجهة اتصال!`, 'success');
+            loadContacts();
+        });
+
         // ─────────────────────────────────────────────────────────────
-        // إعدادات الجهاز
+        // إدارة الجهات
         // ─────────────────────────────────────────────────────────────
 
-        function setupDevice() {
-            const name = document.getElementById('deviceNameInput').value.trim();
-            if (!name) {
-                alert("الرجاء إدخال اسم الجهاز");
-                return;
-            }
+        function addContact() {
+            const username = document.getElementById('searchUsername').value.trim();
             
-            myDeviceName = name;
-            socket.emit('register_device', { myId: myDeviceId || undefined, myName: name });
-            
-            setTimeout(() => {
-                document.getElementById('welcomeScreen').style.display = "none";
-                document.getElementById('fileArea').style.display = "flex";
-                setupDropZone();
-                loadContacts();
-            }, 500);
-        }
-
-        function connectToPeer() {
-            const pairingId = document.getElementById('pairingInput').value.trim();
-            if (!pairingId) {
-                alert("الرجاء إدخال معرّف الاقتران");
+            if (!username) {
+                showNotification('أدخل اسم المستخدم أولاً', 'error');
                 return;
             }
 
-            connectedPeerId = pairingId;
-            socket.emit('register_device', { 
-                myId: myDeviceId, 
-                myName: myDeviceName,
-                pairedId: pairingId 
+            socket.emit('connect_to_user', { targetUsername: username }, (result) => {
+                if (result.success) {
+                    showNotification(`تم الاتصال مع ${username}! ✅`, 'success');
+                    document.getElementById('searchUsername').value = '';
+                    loadContacts();
+                } else {
+                    showNotification(result.error, 'error');
+                }
             });
+        }
+
+        function loadContacts() {
+            socket.emit('get_contacts', (result) => {
+                if (result.success) {
+                    renderContacts(result.contacts);
+                }
+            });
+        }
+
+        function renderContacts(contacts) {
+            const list = document.getElementById('contactsList');
             
-            showNotification("جاري الاتصال...", 'success');
+            if (contacts.length === 0) {
+                list.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">🔗 لا توجد جهات اتصال بعد</div>';
+                return;
+            }
+
+            list.innerHTML = contacts.map(contact => `
+                <div class="contact-item" onclick="selectContact('${contact.contactUserId}', '${contact.contactUsername}', this)">
+                    <div class="contact-avatar">${contact.contactUsername[0].toUpperCase()}</div>
+                    <div class="contact-details">
+                        <div class="contact-name">${contact.contactUsername}</div>
+                        <div class="contact-status ${contact.isOnline ? 'status-online' : 'status-offline'}">
+                            ${contact.isOnline ? 'متصل' : 'غير متصل'}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function selectContact(userId, username, element) {
+            document.querySelectorAll('.contact-item').forEach(e => e.classList.remove('active'));
+            element.classList.add('active');
+            selectedContactId = userId;
+            selectedContactUsername = username;
+            document.getElementById('headerTitle').textContent = username;
+            document.getElementById('fileAreaContainer').style.display = 'flex';
+        }
+
+        function updateContactStatus(userId, isOnline, name) {
+            loadContacts();
         }
 
         // ─────────────────────────────────────────────────────────────
-        // منطقة الإفلات
+        // الملفات
         // ─────────────────────────────────────────────────────────────
 
         function setupDropZone() {
             const dropZone = document.getElementById('dropZone');
             const fileInput = document.getElementById('fileInput');
+
+            if (!dropZone) return;
 
             dropZone.addEventListener('click', () => fileInput.click());
 
@@ -550,18 +731,16 @@
         }
 
         function handleFiles(files) {
-            if (!connectedPeerId && !selectedContactId) {
-                showNotification("الرجاء الاتصال بجهاز أولاً", 'error');
+            if (!selectedContactId) {
+                showNotification('اختر جهة اتصال أولاً', 'error');
                 return;
             }
-
-            const recipientId = selectedContactId || connectedPeerId;
 
             for (let file of files) {
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     socket.emit('send_file', {
-                        recipientDeviceId: recipientId,
+                        recipientUserId: selectedContactId,
                         fileName: file.name,
                         fileSize: file.size,
                         fileData: e.target.result
@@ -572,42 +751,14 @@
             }
         }
 
-        // ─────────────────────────────────────────────────────────────
-        // إدارة الجهات
-        // ─────────────────────────────────────────────────────────────
-
-        function loadContacts() {
-            socket.emit('get_contacts', ({ success, contacts }) => {
-                if (success && contacts.length > 0) {
-                    renderContacts(contacts);
-                }
-            });
-        }
-
-        function renderContacts(contacts) {
-            const list = document.getElementById('contactsList');
-            list.innerHTML = contacts.map(contact => `
-                <div class="contact-item" onclick="selectContact('${contact.deviceId}', this)">
-                    <div class="contact-avatar">${contact.name[0]}</div>
-                    <div class="contact-details">
-                        <div class="contact-name">${contact.name}</div>
-                        <div class="contact-status ${contact.isOnline ? 'status-online' : 'status-offline'}">
-                            ${contact.isOnline ? 'متصل' : 'غير متصل'}
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function selectContact(deviceId, element) {
-            document.querySelectorAll('.contact-item').forEach(e => e.classList.remove('active'));
-            element.classList.add('active');
-            selectedContactId = deviceId;
-            document.getElementById('headerTitle').textContent = element.querySelector('.contact-name').textContent;
-        }
-
-        function updateContactStatus(deviceId, isOnline, name) {
-            loadContacts();
+        function downloadFile(fileData, fileName) {
+            const blob = new Blob([fileData]);
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            a.click();
+            URL.revokeObjectURL(url);
         }
 
         // ─────────────────────────────────────────────────────────────
@@ -628,38 +779,29 @@
         }
 
         // ─────────────────────────────────────────────────────────────
-        // الملفات
-        // ─────────────────────────────────────────────────────────────
-
-        function downloadFile(fileData, fileName) {
-            const blob = new Blob([fileData]);
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = fileName;
-            a.click();
-            URL.revokeObjectURL(url);
-        }
-
-        function refreshPendingFiles() {
-            // محدّث الملفات المعلقة
-        }
-
-        function copyCode() {
-            navigator.clipboard.writeText(myDeviceId);
-            showNotification("تم النسخ ✅", 'success');
-        }
-
-        // ─────────────────────────────────────────────────────────────
         // البدء
         // ─────────────────────────────────────────────────────────────
 
-        document.getElementById('deviceNameInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') setupDevice();
+        window.addEventListener('load', () => {
+            const savedDeviceId = localStorage.getItem('deviceId');
+
+            if (savedDeviceId) {
+                // محاولة تسجيل الدخول التلقائي
+                document.getElementById('deviceIdInput').value = savedDeviceId;
+                loginUser();
+            }
         });
 
-        document.getElementById('pairingInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') connectToPeer();
+        document.getElementById('usernameInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') registerNewUser();
+        });
+
+        document.getElementById('deviceIdInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') loginUser();
+        });
+
+        document.getElementById('searchUsername').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addContact();
         });
     </script>
 </body>
