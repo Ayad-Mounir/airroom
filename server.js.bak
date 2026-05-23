@@ -459,25 +459,6 @@ io.on('connection', (socket) => {
   // ─── ping ──────────────────────────────────────────────────
   socket.on('ping_test', () => socket.emit('pong_test', { time: Date.now() }));
 
-  // ─── WebRTC Signaling (السيرفر يمرر فقط — لا يرى الملفات) ──
-  socket.on('webrtc_offer', ({ recipientUserId, offer }) => {
-    if (!socket.userId) return;
-    const s = getSocketByUserId(recipientUserId);
-    if (s) s.emit('webrtc_offer', { fromUserId: socket.userId, fromUsername: socket.username, offer });
-  });
-
-  socket.on('webrtc_answer', ({ recipientUserId, answer }) => {
-    if (!socket.userId) return;
-    const s = getSocketByUserId(recipientUserId);
-    if (s) s.emit('webrtc_answer', { fromUserId: socket.userId, answer });
-  });
-
-  socket.on('webrtc_ice', ({ recipientUserId, candidate }) => {
-    if (!socket.userId) return;
-    const s = getSocketByUserId(recipientUserId);
-    if (s) s.emit('webrtc_ice', { fromUserId: socket.userId, candidate });
-  });
-
   // ─── قطع الاتصال ──────────────────────────────────────────
   socket.on('disconnect', (reason) => {
     const { userId, username } = socket;
