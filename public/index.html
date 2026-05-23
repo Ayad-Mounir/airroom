@@ -1,795 +1,666 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AirRoom — مشاركة الملفات</title>
-  <link rel="manifest" href="/manifest.json" />
-  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
-  <link rel="apple-touch-icon" href="/icon-192.png" />
-  <meta name="theme-color" content="#6366f1" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="AirRoom" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
-
-  <style>
-    /* ═══════════════════════════════════════════════════════
-       VARIABLES & RESET
-    ═══════════════════════════════════════════════════════ */
-    :root {
-      --bg:          #05070f;
-      --surface:     rgba(12, 18, 38, 0.72);
-      --surface-alt: rgba(16, 24, 52, 0.60);
-      --border:      rgba(99, 102, 241, 0.18);
-      --border-hi:   rgba(99, 102, 241, 0.55);
-
-      --indigo:      #6366f1;
-      --indigo-lit:  #818cf8;
-      --indigo-dim:  #3730a3;
-      --cyan:        #22d3ee;
-      --emerald:     #34d399;
-      --rose:        #fb7185;
-      --amber:       #fbbf24;
-
-      --text-hi:     #f0f4ff;
-      --text-mid:    #94a3b8;
-      --text-lo:     #475569;
-
-      --radius:      16px;
-      --radius-sm:   10px;
-      --glow-indigo: 0 0 32px rgba(99,102,241,0.30);
-      --glow-cyan:   0 0 24px rgba(34,211,238,0.25);
-    }
-
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    html { scroll-behavior: smooth; }
-
-    body {
-      font-family: 'Cairo', sans-serif;
-      background: var(--bg);
-      color: var(--text-hi);
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
-
-    /* ═══════════════════════════════════════════════════════
-       ANIMATED BACKGROUND
-    ═══════════════════════════════════════════════════════ */
-    .bg-layer {
-      position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none;
-    }
-
-    /* subtle grid */
-    .bg-layer::before {
-      content: '';
-      position: absolute; inset: 0;
-      background-image:
-        linear-gradient(rgba(99,102,241,0.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(99,102,241,0.04) 1px, transparent 1px);
-      background-size: 48px 48px;
-      mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 20%, transparent 100%);
-    }
-
-    /* glowing orbs */
-    .orb {
-      position: absolute;
-      border-radius: 50%;
-      filter: blur(80px);
-      opacity: 0.45;
-      animation: orb-drift 18s ease-in-out infinite alternate;
-    }
-    .orb-1 {
-      width: 520px; height: 520px;
-      background: radial-gradient(circle, #4f46e5 0%, transparent 70%);
-      top: -180px; right: -120px;
-      animation-duration: 20s;
-    }
-    .orb-2 {
-      width: 360px; height: 360px;
-      background: radial-gradient(circle, #0891b2 0%, transparent 70%);
-      bottom: 80px; left: -80px;
-      animation-duration: 25s; animation-delay: -8s;
-    }
-    .orb-3 {
-      width: 280px; height: 280px;
-      background: radial-gradient(circle, #7c3aed 0%, transparent 70%);
-      top: 45%; left: 50%; transform: translate(-50%,-50%);
-      animation-duration: 16s; animation-delay: -4s; opacity: 0.25;
-    }
-
-    @keyframes orb-drift {
-      0%   { transform: translate(0,0)   scale(1); }
-      50%  { transform: translate(30px, 20px) scale(1.06); }
-      100% { transform: translate(-15px, 10px) scale(0.96); }
-    }
-    .orb-3 {
-      animation-name: orb-drift-c;
-    }
-    @keyframes orb-drift-c {
-      0%   { transform: translate(-50%,-50%) scale(1); }
-      50%  { transform: translate(calc(-50% + 20px), calc(-50% - 15px)) scale(1.12); }
-      100% { transform: translate(calc(-50% - 10px), calc(-50% + 8px)) scale(0.94); }
-    }
-
-    /* ═══════════════════════════════════════════════════════
-       LAYOUT
-    ═══════════════════════════════════════════════════════ */
-    .app-wrapper {
-      position: relative; z-index: 1;
-      max-width: 520px;
-      margin: 0 auto;
-      padding: 32px 18px 60px;
-      display: flex; flex-direction: column; gap: 14px;
-    }
-
-    /* ═══════════════════════════════════════════════════════
-       HEADER / BRAND
-    ═══════════════════════════════════════════════════════ */
-    .brand {
-      display: flex; align-items: center; gap: 14px;
-      padding: 22px 26px 18px;
-      margin-bottom: 2px;
-    }
-
-    .brand-icon {
-      width: 48px; height: 48px;
-      background: linear-gradient(135deg, var(--indigo) 0%, #8b5cf6 100%);
-      border-radius: 14px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 22px;
-      flex-shrink: 0;
-      box-shadow: var(--glow-indigo), inset 0 1px 0 rgba(255,255,255,0.15);
-    }
-
-    .brand-text { flex: 1; }
-
-    .brand-name {
-      font-size: 26px; font-weight: 900; letter-spacing: -0.5px;
-      background: linear-gradient(135deg, #f0f4ff 30%, var(--indigo-lit) 100%);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      background-clip: text;
-      line-height: 1;
-      display: block;
-    }
-
-    .brand-sub {
-      font-size: 12px; color: var(--text-lo); font-weight: 400;
-      letter-spacing: 0.3px; margin-top: 4px; display: block;
-    }
-
-    /* ═══════════════════════════════════════════════════════
-       GLASS CARD
-    ═══════════════════════════════════════════════════════ */
-    .card {
-      background: var(--surface);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 18px 22px;
-      box-shadow: 0 4px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04);
-      transition: border-color .3s;
-    }
-    .card:hover { border-color: rgba(99,102,241,0.28); }
-
-    .card-title {
-      font-size: 11px; font-weight: 600; letter-spacing: 1.2px;
-      text-transform: uppercase; color: var(--text-lo);
-      margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
-    }
-    .card-title::before {
-      content: '';
-      display: block; width: 14px; height: 2px;
-      background: var(--indigo); border-radius: 2px;
-      flex-shrink: 0;
-    }
-
-    /* ═══════════════════════════════════════════════════════
-       STATUS CARD
-    ═══════════════════════════════════════════════════════ */
-    .status-card { padding: 0; overflow: hidden; }
-
-    .status {
-      display: flex; align-items: center; gap: 14px;
-      padding: 18px 22px;
-      border-radius: var(--radius);
-      transition: background .4s, color .4s;
-      font-size: 15px; font-weight: 600;
-    }
-
-    .status-dot {
-      width: 11px; height: 11px;
-      border-radius: 50%; flex-shrink: 0;
-      position: relative;
-    }
-    .status-dot::after {
-      content: '';
-      position: absolute; inset: -4px;
-      border-radius: 50%;
-      opacity: 0;
-    }
-
-    .status.online {
-      background: linear-gradient(135deg, rgba(16,60,36,0.85), rgba(5,46,22,0.60));
-      color: #6ee7b7;
-    }
-    .status.online .status-dot {
-      background: var(--emerald);
-      box-shadow: 0 0 8px var(--emerald);
-    }
-    .status.online .status-dot::after {
-      background: var(--emerald);
-      animation: pulse-ring 2s ease-out infinite;
-    }
-
-    .status.offline {
-      background: linear-gradient(135deg, rgba(60,8,8,0.85), rgba(46,5,5,0.60));
-      color: #fca5a5;
-    }
-    .status.offline .status-dot { background: var(--rose); }
-
-    .status.disconnected {
-      background: linear-gradient(135deg, rgba(15,20,40,0.85), rgba(10,14,30,0.60));
-      color: var(--text-mid);
-    }
-    .status.disconnected .status-dot {
-      background: var(--text-lo);
-      animation: blink 2s ease-in-out infinite;
-    }
-
-    @keyframes pulse-ring {
-      0%   { transform: scale(1); opacity: .6; }
-      70%  { transform: scale(2.2); opacity: 0; }
-      100% { transform: scale(2.2); opacity: 0; }
-    }
-    @keyframes blink {
-      0%, 100% { opacity: 1; }
-      50%       { opacity: 0.25; }
-    }
-
-    .status-text { flex: 1; }
-
-    /* ═══════════════════════════════════════════════════════
-       DEVICE INFO ROWS
-    ═══════════════════════════════════════════════════════ */
-    .info-grid {
-      display: flex; flex-direction: column; gap: 2px;
-    }
-
-    .info-row {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 9px 0;
-      border-bottom: 1px solid rgba(71,85,105,0.2);
-    }
-    .info-row:last-child { border-bottom: none; padding-bottom: 0; }
-    .info-row:first-child { padding-top: 0; }
-
-    .info-label {
-      font-size: 12px; color: var(--text-lo); font-weight: 500;
-      display: flex; align-items: center; gap: 6px;
-    }
-    .info-label-icon { font-size: 14px; opacity: 0.8; }
-
-    .info-value {
-      font-family: 'Space Mono', monospace;
-      font-size: 12px; color: var(--text-hi);
-      background: rgba(99,102,241,0.10);
-      padding: 3px 10px; border-radius: 6px;
-      border: 1px solid rgba(99,102,241,0.15);
-      max-width: 200px;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-
-    .info-value.highlight {
-      color: var(--indigo-lit);
-      border-color: rgba(99,102,241,0.35);
-      background: rgba(99,102,241,0.15);
-    }
-
-    /* ═══════════════════════════════════════════════════════
-       DROP ZONE
-    ═══════════════════════════════════════════════════════ */
-    #drop-zone {
-      position: relative;
-      border: 2px dashed rgba(99,102,241,0.30);
-      border-radius: var(--radius);
-      padding: 44px 20px;
-      text-align: center;
-      cursor: pointer;
-      transition: all .25s;
-      overflow: hidden;
-    }
-
-    #drop-zone::before {
-      content: '';
-      position: absolute; inset: 0;
-      background: radial-gradient(ellipse 60% 60% at 50% 50%,
-        rgba(99,102,241,0.07) 0%, transparent 70%);
-      opacity: 0;
-      transition: opacity .3s;
-    }
-
-    #drop-zone:hover::before,
-    #drop-zone.drag-over::before { opacity: 1; }
-
-    #drop-zone:hover,
-    #drop-zone.drag-over {
-      border-color: var(--indigo);
-      background: rgba(99,102,241,0.07);
-      box-shadow: var(--glow-indigo);
-    }
-
-    #drop-zone.drag-over {
-      border-style: solid;
-      transform: scale(1.015);
-    }
-
-    .drop-icon-wrap {
-      width: 68px; height: 68px;
-      background: linear-gradient(135deg, rgba(99,102,241,0.20), rgba(139,92,246,0.12));
-      border: 1px solid rgba(99,102,241,0.25);
-      border-radius: 18px;
-      display: flex; align-items: center; justify-content: center;
-      margin: 0 auto 16px;
-      font-size: 28px;
-      transition: transform .25s, box-shadow .25s;
-    }
-
-    #drop-zone:hover .drop-icon-wrap,
-    #drop-zone.drag-over .drop-icon-wrap {
-      transform: translateY(-3px) scale(1.06);
-      box-shadow: var(--glow-indigo);
-    }
-
-    .drop-label {
-      font-size: 15px; font-weight: 600; color: var(--text-hi);
-      margin-bottom: 6px;
-    }
-
-    .drop-hint {
-      font-size: 12px; color: var(--text-lo);
-    }
-
-    #file-input { display: none; }
-
-    /* ═══════════════════════════════════════════════════════
-       PROGRESS BARS
-    ═══════════════════════════════════════════════════════ */
-    .progress-wrap {
-      display: none;
-      margin-top: 14px;
-      background: rgba(10,14,30,0.6);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 12px 14px;
-    }
-
-    .progress-header {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 8px;
-    }
-
-    .progress-label {
-      font-size: 12px; color: var(--text-mid); font-weight: 500;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-      max-width: 80%;
-    }
-
-    .progress-pct {
-      font-family: 'Space Mono', monospace;
-      font-size: 11px; color: var(--text-lo);
-    }
-
-    .progress-track {
-      background: rgba(15,23,42,0.8);
-      border-radius: 99px; height: 6px;
-      overflow: hidden;
-    }
-
-    .progress-bar {
-      height: 100%; width: 0%; border-radius: 99px;
-      transition: width .2s ease;
-      position: relative;
-    }
-
-    .progress-bar::after {
-      content: '';
-      position: absolute; right: 0; top: 0; bottom: 0;
-      width: 40px;
-      background: rgba(255,255,255,0.35);
-      border-radius: 99px;
-      filter: blur(4px);
-    }
-
-    .progress-bar.send {
-      background: linear-gradient(90deg, var(--indigo-dim), var(--indigo), var(--indigo-lit));
-      box-shadow: 0 0 10px rgba(99,102,241,0.5);
-    }
-
-    .progress-bar.recv {
-      background: linear-gradient(90deg, #065f46, var(--emerald));
-      box-shadow: 0 0 10px rgba(52,211,153,0.4);
-    }
-
-    /* ═══════════════════════════════════════════════════════
-       ERROR MESSAGE
-    ═══════════════════════════════════════════════════════ */
-    #transfer-error {
-      min-height: 20px; margin-top: 10px;
-      font-size: 13px; color: var(--rose);
-      text-align: center; font-weight: 500;
-      transition: opacity .3s;
-    }
-
-    /* ═══════════════════════════════════════════════════════
-       SHARE BUTTON
-    ═══════════════════════════════════════════════════════ */
-    #share-btn {
-      width: 100%; padding: 15px 24px;
-      background: linear-gradient(135deg, var(--indigo) 0%, #7c3aed 100%);
-      color: #fff; border: none;
-      border-radius: var(--radius);
-      font-family: 'Cairo', sans-serif;
-      font-size: 15px; font-weight: 700;
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center; gap: 10px;
-      box-shadow: var(--glow-indigo), 0 4px 20px rgba(99,102,241,0.25);
-      transition: transform .2s, box-shadow .2s, filter .2s;
-      position: relative; overflow: hidden;
-    }
-
-    #share-btn::before {
-      content: '';
-      position: absolute; inset: 0;
-      background: linear-gradient(135deg, rgba(255,255,255,0.10) 0%, transparent 100%);
-      opacity: 0; transition: opacity .2s;
-    }
-
-    #share-btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
-    #share-btn:hover::before { opacity: 1; }
-    #share-btn:hover { box-shadow: 0 0 48px rgba(99,102,241,0.45), 0 8px 30px rgba(99,102,241,0.30); }
-    #share-btn:active { transform: translateY(0); }
-
-    #share-btn .btn-icon { font-size: 18px; }
-
-    #share-feedback {
-      text-align: center; min-height: 22px;
-      font-size: 13px; font-weight: 600;
-      color: var(--emerald);
-      margin-top: 8px;
-      transition: opacity .3s;
-      display: flex; align-items: center; justify-content: center; gap: 6px;
-    }
-
-    /* ═══════════════════════════════════════════════════════
-       TRANSFER LOG
-    ═══════════════════════════════════════════════════════ */
-    #transfer-log {
-      list-style: none;
-      display: flex; flex-direction: column; gap: 4px;
-    }
-
-    #transfer-log li {
-      display: flex; align-items: center; gap: 10px;
-      font-size: 13px; color: var(--text-mid);
-      padding: 9px 12px;
-      background: rgba(10,14,30,0.5);
-      border: 1px solid rgba(71,85,105,0.15);
-      border-radius: var(--radius-sm);
-      transition: border-color .2s;
-    }
-
-    #transfer-log li:hover { border-color: var(--border); }
-
-    #transfer-log li:first-child {
-      color: var(--text-hi);
-      border-color: rgba(99,102,241,0.18);
-    }
-
-    .log-icon {
-      font-size: 15px; flex-shrink: 0;
-      width: 28px; height: 28px;
-      background: rgba(99,102,241,0.10);
-      border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-    }
-
-    .log-name {
-      flex: 1;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-
-    .log-size {
-      font-family: 'Space Mono', monospace;
-      font-size: 11px; color: var(--text-lo);
-      flex-shrink: 0;
-    }
-
-    .log-empty {
-      text-align: center; color: var(--text-lo);
-      font-size: 13px; padding: 18px !important;
-      background: transparent !important; border-color: transparent !important;
-      justify-content: center;
-    }
-
-    /* ═══════════════════════════════════════════════════════
-       DIVIDER
-    ═══════════════════════════════════════════════════════ */
-    .divider {
-      height: 1px;
-      background: linear-gradient(90deg,
-        transparent 0%, var(--border) 30%, var(--border) 70%, transparent 100%);
-      margin: 2px 0;
-    }
-
-    /* ═══════════════════════════════════════════════════════
-       FOOTER
-    ═══════════════════════════════════════════════════════ */
-    .footer {
-      text-align: center; font-size: 11px; color: var(--text-lo);
-      padding-top: 6px; letter-spacing: 0.5px;
-    }
-
-    /* ═══════════════════════════════════════════════════════
-       ENTRANCE ANIMATIONS
-    ═══════════════════════════════════════════════════════ */
-    @keyframes fade-up {
-      from { opacity: 0; transform: translateY(18px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    .brand           { animation: fade-up .55s ease both; }
-    .status-card     { animation: fade-up .55s ease both .08s; }
-    .card-device     { animation: fade-up .55s ease both .14s; }
-    .card-drop       { animation: fade-up .55s ease both .20s; }
-    .card-share      { animation: fade-up .55s ease both .26s; }
-    .card-log        { animation: fade-up .55s ease both .32s; }
-
-    /* ═══════════════════════════════════════════════════════
-       RESPONSIVE
-    ═══════════════════════════════════════════════════════ */
-    @media (max-width: 420px) {
-      .app-wrapper { padding: 20px 12px 50px; gap: 12px; }
-      .brand { padding: 16px 18px 12px; }
-      .brand-name { font-size: 22px; }
-      .brand-icon { width: 42px; height: 42px; font-size: 20px; }
-      .card { padding: 14px 16px; }
-      #drop-zone { padding: 36px 16px; }
-      .drop-icon-wrap { width: 58px; height: 58px; font-size: 24px; }
-      #share-btn { font-size: 14px; padding: 13px 20px; }
-    }
-  </style>
-</head>
-
-<body>
-
-  <!-- ── خلفية متحركة ── -->
-  <div class="bg-layer" aria-hidden="true">
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-    <div class="orb orb-3"></div>
-  </div>
-
-  <div class="app-wrapper">
-
-    <!-- ── شعار التطبيق ── -->
-    <div class="brand">
-      <div class="brand-icon">✈️</div>
-      <div class="brand-text">
-        <span class="brand-name">AirRoom</span>
-        <span class="brand-sub">نقل الملفات عبر الشبكة · فوري · مشفّر</span>
-      </div>
-    </div>
-
-    <!-- ── مؤشر الحالة ── -->
-    <div class="card status-card">
-      <div id="connection-status" class="status disconnected">
-        <div class="status-dot"></div>
-        <span class="status-text">⚪ جارٍ الاتصال…</span>
-      </div>
-    </div>
-
-    <!-- ── معلومات الجهاز ── -->
-    <div class="card card-device">
-      <div class="card-title">معلومات الجهاز</div>
-      <div class="info-grid">
-        <div class="info-row">
-          <span class="info-label">
-            <span class="info-label-icon">💻</span> جهازك
-          </span>
-          <span class="info-value highlight" id="my-device-name">…</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">
-            <span class="info-label-icon">🔑</span> معرّفك
-          </span>
-          <span class="info-value" id="my-device-id">…</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">
-            <span class="info-label-icon">🔗</span> الشريك
-          </span>
-          <span class="info-value" id="paired-device-id">لا يوجد</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">
-            <span class="info-label-icon">📡</span> الحالة
-          </span>
-          <span class="info-value" id="paired-status">—</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- ── منطقة إرسال الملفات ── -->
-    <div class="card card-drop">
-      <div class="card-title">إرسال ملف</div>
-
-      <div id="drop-zone">
-        <div class="drop-icon-wrap">📂</div>
-        <div class="drop-label">اسحب ملفاً هنا أو انقر للاختيار</div>
-        <div class="drop-hint">يدعم جميع أنواع الملفات · حتى 50+ ميغابايت</div>
-      </div>
-      <input type="file" id="file-input" />
-
-      <!-- شريط تقدم الإرسال -->
-      <div class="progress-wrap" id="send-progress-wrap">
-        <div class="progress-header">
-          <div class="progress-label" id="send-progress-label">إرسال…</div>
-          <div class="progress-pct" id="send-pct-text">0%</div>
-        </div>
-        <div class="progress-track">
-          <div class="progress-bar send" id="send-progress-bar"></div>
-        </div>
-      </div>
-
-      <!-- شريط تقدم الاستقبال -->
-      <div class="progress-wrap" id="recv-progress-wrap">
-        <div class="progress-header">
-          <div class="progress-label" id="recv-progress-label">استقبال…</div>
-          <div class="progress-pct" id="recv-pct-text">0%</div>
-        </div>
-        <div class="progress-track">
-          <div class="progress-bar recv" id="recv-progress-bar"></div>
-        </div>
-      </div>
-
-      <div id="transfer-error"></div>
-    </div>
-
-    <!-- ── مشاركة الغرفة ── -->
-    <div class="card-share">
-      <button id="share-btn">
-        <span class="btn-icon">🔗</span>
-        مشاركة الغرفة مع شريك
-      </button>
-      <div id="share-feedback"></div>
-    </div>
-
-    <!-- ── سجل النقل ── -->
-    <div class="card card-log">
-      <div class="card-title">سجل النقل</div>
-      <ul id="transfer-log">
-        <li class="log-empty">لا توجد عمليات نقل بعد</li>
-      </ul>
-    </div>
-
-    <div class="footer">AirRoom · المرحلة 5 · واجهة المستخدم الكاملة</div>
-
-  </div><!-- /.app-wrapper -->
-
-  <!-- ══════════════════════════════════════════════════════
-       INLINE BRIDGE SCRIPT
-       يُضيف الشريحة البصرية فقط فوق منطق app.js
-  ══════════════════════════════════════════════════════ -->
-  <script>
-    // ── تحديث النسبة المئوية بجانب شريط التقدم ──────────────
-    // نراقب خاصية width على progress-bar بالكلّ لعرض الرقم
-    const _origSetSendProg = function() {};
-
-    const sendBar  = document.getElementById('send-progress-bar');
-    const recvBar  = document.getElementById('recv-progress-bar');
-    const sendPct  = document.getElementById('send-pct-text');
-    const recvPct  = document.getElementById('recv-pct-text');
-
-    if (sendBar && sendPct) {
-      const obs = new MutationObserver(() => {
-        const w = sendBar.style.width || '0%';
-        sendPct.textContent = w;
-      });
-      obs.observe(sendBar, { attributes: true, attributeFilter: ['style'] });
-    }
-
-    if (recvBar && recvPct) {
-      const obs = new MutationObserver(() => {
-        const w = recvBar.style.width || '0%';
-        recvPct.textContent = w;
-      });
-      obs.observe(recvBar, { attributes: true, attributeFilter: ['style'] });
-    }
-
-    // ── نسخ UUID بنقرة ──────────────────────────────────────
-    const myIdEl = document.getElementById('my-device-id');
-    if (myIdEl) {
-      myIdEl.title = 'انقر لنسخ المعرّف الكامل';
-      myIdEl.style.cursor = 'pointer';
-      myIdEl.style.transition = 'background .2s, color .2s';
-
-      myIdEl.addEventListener('click', async () => {
-        const fullId = localStorage.getItem('airroom_my_id') || '';
-        if (!fullId) return;
-        try {
-          await navigator.clipboard.writeText(fullId);
-        } catch {
-          const ta = document.createElement('textarea');
-          ta.value = fullId; ta.style.position = 'fixed'; ta.style.opacity = '0';
-          document.body.appendChild(ta); ta.select();
-          document.execCommand('copy'); document.body.removeChild(ta);
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AirRoom - مشاركة الملفات</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        // تأثير بصري مؤقت
-        const orig = myIdEl.textContent;
-        myIdEl.textContent = '✅ منسوخ!';
-        myIdEl.style.background = 'rgba(52,211,153,0.18)';
-        myIdEl.style.color = '#34d399';
-        setTimeout(() => {
-          myIdEl.textContent = orig;
-          myIdEl.style.background = '';
-          myIdEl.style.color = '';
-        }, 1800);
-      });
-    }
 
-    // ── تجميل سجل النقل بإضافة هيكل HTML للعناصر الجديدة ──
-    const transferLog = document.getElementById('transfer-log');
-    if (transferLog) {
-      const logObserver = new MutationObserver(() => {
-        const items = transferLog.querySelectorAll('li:not([data-styled])');
-        items.forEach(li => {
-          if (li.classList.contains('log-empty')) return;
-          const text = li.textContent || '';
-          const isSent = text.includes('📤');
-          const parts  = text.replace(/^[📤📥]\s*/, '').split(' — ');
-          const fname  = parts[0] || '';
-          const fsize  = parts[1] || '';
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f0f0f0;
+            height: 100vh;
+            display: flex;
+        }
 
-          li.setAttribute('data-styled', '1');
-          li.innerHTML = `
-            <span class="log-icon">${isSent ? '📤' : '📥'}</span>
-            <span class="log-name">${fname}</span>
-            <span class="log-size">${fsize}</span>
-          `;
+        /* الشريط الجانبي */
+        .sidebar {
+            width: 30%;
+            background: white;
+            border-left: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
 
-          // إزالة رسالة "لا توجد عمليات" عند أول إدخال
-          const emptyItem = transferLog.querySelector('.log-empty');
-          if (emptyItem) emptyItem.remove();
+        .sidebar-header {
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+            background: #075e54;
+            color: white;
+        }
+
+        .sidebar-header h2 {
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+
+        .sidebar-header .device-info {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .contacts-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 0;
+        }
+
+        .contact-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .contact-item:hover {
+            background: #f5f5f5;
+        }
+
+        .contact-item.active {
+            background: #e8f5e9;
+            border-right: 4px solid #075e54;
+        }
+
+        .contact-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: #075e54;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .contact-details {
+            flex: 1;
+        }
+
+        .contact-name {
+            font-weight: 500;
+            color: #000;
+        }
+
+        .contact-status {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .status-online::before {
+            content: "🟢";
+            margin-left: 5px;
+        }
+
+        .status-offline::before {
+            content: "⚪";
+            margin-left: 5px;
+        }
+
+        /* المنطقة الرئيسية */
+        .main-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: white;
+            position: relative;
+        }
+
+        .header {
+            padding: 15px 25px;
+            background: #075e54;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 20px;
+        }
+
+        .header-status {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        /* منطقة الملفات */
+        .content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 25px;
+            overflow-y: auto;
+        }
+
+        .drop-zone {
+            flex: 1;
+            border: 3px dashed #ccc;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: #999;
+        }
+
+        .drop-zone:hover,
+        .drop-zone.dragover {
+            border-color: #075e54;
+            background: #f0fdf4;
+            color: #075e54;
+        }
+
+        .drop-zone-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .drop-zone-text h2 {
+            color: #075e54;
+            margin-bottom: 10px;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        /* الإشعارات */
+        .notifications {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            max-width: 400px;
+        }
+
+        .notification {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            animation: slideIn 0.3s ease;
+            border-right: 4px solid #075e54;
+        }
+
+        .notification.error {
+            border-right-color: #f44336;
+        }
+
+        .notification.success {
+            border-right-color: #4caf50;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* قائمة الملفات المعلقة */
+        .pending-files {
+            margin-bottom: 20px;
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 8px;
+            border-right: 4px solid #ffc107;
+        }
+
+        .pending-files h3 {
+            color: #856404;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .pending-file {
+            padding: 10px;
+            background: white;
+            margin: 5px 0;
+            border-radius: 4px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pending-file .icon {
+            font-size: 18px;
+        }
+
+        /* الشاشة الأولية */
+        .welcome-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .welcome-screen h2 {
+            color: #075e54;
+            font-size: 24px;
+        }
+
+        .device-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+
+        .device-form input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .device-form button {
+            padding: 12px 25px;
+            background: #075e54;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+
+        .device-form button:hover {
+            background: #054d43;
+        }
+
+        .pairing-code {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .pairing-code-label {
+            color: #999;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+
+        .code {
+            font-family: monospace;
+            font-size: 24px;
+            font-weight: bold;
+            color: #075e54;
+            letter-spacing: 2px;
+            cursor: pointer;
+            padding: 10px;
+            border: 2px dashed #075e54;
+            border-radius: 6px;
+        }
+
+        .code:hover {
+            background: #e8f5e9;
+        }
+
+        /* الاستجابة للهواتف */
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: 30%;
+                border-left: none;
+                border-bottom: 1px solid #e0e0e0;
+            }
+
+            .main-area {
+                height: 70%;
+            }
+
+            .notifications {
+                max-width: calc(100% - 40px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- الشريط الجانبي -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>🌐 AirRoom</h2>
+            <div class="device-info">
+                <span id="myDeviceName">إعدادات</span>
+                <br>
+                <small id="myDeviceId"></small>
+            </div>
+        </div>
+        <div class="contacts-list" id="contactsList">
+            <div style="padding: 20px; text-align: center; color: #999;">
+                🔗 لا توجد جهات اتصال بعد
+            </div>
+        </div>
+    </div>
+
+    <!-- المنطقة الرئيسية -->
+    <div class="main-area">
+        <div class="header">
+            <h1 id="headerTitle">مرحباً بك في AirRoom</h1>
+            <div id="headerStatus" class="header-status"></div>
+        </div>
+
+        <div class="content" id="content">
+            <!-- الشاشة الأولية -->
+            <div id="welcomeScreen" class="welcome-screen">
+                <h2>🚀 ابدأ الآن</h2>
+                <p style="color: #999; text-align: center;">أدخل اسم جهازك لبدء المشاركة</p>
+                
+                <div class="device-form">
+                    <input type="text" id="deviceNameInput" placeholder="اسم الجهاز (مثال: جهازي الشخصي)" value="جهازي">
+                    <button onclick="setupDevice()">تم</button>
+                </div>
+
+                <div class="pairing-code">
+                    <div class="pairing-code-label">معرّف الاقتران</div>
+                    <div class="code" id="pairingCode" onclick="copyCode()" title="انقر للنسخ">
+                        ⏳ جاري التحضير...
+                    </div>
+                    <p style="color: #999; font-size: 12px; margin-top: 10px;">
+                        شارك هذا المعرّف مع الأجهزة الأخرى للاتصال
+                    </p>
+                </div>
+
+                <div style="text-align: center; color: #075e54; font-size: 14px;">
+                    أم تريد الاتصال بجهاز آخر؟
+                </div>
+                <div class="device-form">
+                    <input type="text" id="pairingInput" placeholder="معرّف الاقتران">
+                    <button onclick="connectToPeer()">اتصل</button>
+                </div>
+            </div>
+
+            <!-- منطقة الملفات -->
+            <div id="fileArea" style="display: none; flex: 1; display: flex; flex-direction: column;">
+                <div id="pendingFilesContainer"></div>
+                
+                <div class="drop-zone" id="dropZone">
+                    <div class="drop-zone-icon">📁</div>
+                    <div class="drop-zone-text">
+                        <h2>اسحب الملفات هنا</h2>
+                        <p>أو اضغط للاختيار</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- الإشعارات -->
+    <div class="notifications" id="notificationsContainer"></div>
+
+    <input type="file" id="fileInput" class="file-input" multiple>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+        let socket;
+        let myDeviceId;
+        let myDeviceName;
+        let selectedContactId;
+        let connectedPeerId;
+
+        // ─────────────────────────────────────────────────────────────
+        // الاتصال بـ Socket.io
+        // ─────────────────────────────────────────────────────────────
+
+        socket = io();
+
+        socket.on('registered', ({ myId, myName }) => {
+            myDeviceId = myId;
+            myDeviceName = myName;
+            document.getElementById('myDeviceName').textContent = myName;
+            document.getElementById('myDeviceId').textContent = myId.slice(0, 12) + "…";
+            document.getElementById('pairingCode').textContent = myId;
+            document.getElementById('welcomeScreen').style.display = "flex";
         });
-      });
-      logObserver.observe(transferLog, { childList: true });
-    }
-  </script>
 
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="/app.js"></script>
+        // ─────────────────────────────────────────────────────────────
+        // إدارة الجهات الاتصال
+        // ─────────────────────────────────────────────────────────────
 
-  <!-- ── تسجيل Service Worker ── -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .then((reg) => {
-            console.log('[SW] مسجَّل بنجاح، النطاق:', reg.scope);
-          })
-          .catch((err) => {
-            console.warn('[SW] فشل التسجيل:', err);
-          });
-      });
-    }
-  </script>
+        socket.on('contact_online', ({ deviceId, name }) => {
+            updateContactStatus(deviceId, true, name);
+            showNotification(`${name} متصل الآن 🟢`, 'success');
+        });
 
+        socket.on('contact_offline', ({ deviceId, name }) => {
+            updateContactStatus(deviceId, false, name);
+            showNotification(`${name} قطع الاتصال ⚪`, 'error');
+        });
+
+        // ─────────────────────────────────────────────────────────────
+        // استقبال الملفات
+        // ─────────────────────────────────────────────────────────────
+
+        socket.on('receive_file', ({ senderDeviceId, senderName, fileName, fileData }) => {
+            downloadFile(fileData, fileName);
+            showNotification(`استقبل ملف من ${senderName}: ${fileName}`, 'success');
+        });
+
+        socket.on('receive_pending_file', ({ fileName, senderDeviceId, fileData }) => {
+            downloadFile(fileData, fileName);
+            showNotification(`ملف معلق تم استقباله: ${fileName}`, 'success');
+        });
+
+        socket.on('file_queued', ({ recipientDeviceId, fileName }) => {
+            showNotification(`${fileName} في قائمة الانتظار 📋`, 'success');
+            refreshPendingFiles();
+        });
+
+        socket.on('file_delivered', ({ recipientDeviceId, fileName }) => {
+            showNotification(`تم إرسال ${fileName} بنجاح ✅`, 'success');
+        });
+
+        // ─────────────────────────────────────────────────────────────
+        // إعدادات الجهاز
+        // ─────────────────────────────────────────────────────────────
+
+        function setupDevice() {
+            const name = document.getElementById('deviceNameInput').value.trim();
+            if (!name) {
+                alert("الرجاء إدخال اسم الجهاز");
+                return;
+            }
+            
+            myDeviceName = name;
+            socket.emit('register_device', { myId: myDeviceId || undefined, myName: name });
+            
+            setTimeout(() => {
+                document.getElementById('welcomeScreen').style.display = "none";
+                document.getElementById('fileArea').style.display = "flex";
+                setupDropZone();
+                loadContacts();
+            }, 500);
+        }
+
+        function connectToPeer() {
+            const pairingId = document.getElementById('pairingInput').value.trim();
+            if (!pairingId) {
+                alert("الرجاء إدخال معرّف الاقتران");
+                return;
+            }
+
+            connectedPeerId = pairingId;
+            socket.emit('register_device', { 
+                myId: myDeviceId, 
+                myName: myDeviceName,
+                pairedId: pairingId 
+            });
+            
+            showNotification("جاري الاتصال...", 'success');
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        // منطقة الإفلات
+        // ─────────────────────────────────────────────────────────────
+
+        function setupDropZone() {
+            const dropZone = document.getElementById('dropZone');
+            const fileInput = document.getElementById('fileInput');
+
+            dropZone.addEventListener('click', () => fileInput.click());
+
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('dragover');
+            });
+
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('dragover');
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+                handleFiles(e.dataTransfer.files);
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                handleFiles(e.target.files);
+            });
+        }
+
+        function handleFiles(files) {
+            if (!connectedPeerId && !selectedContactId) {
+                showNotification("الرجاء الاتصال بجهاز أولاً", 'error');
+                return;
+            }
+
+            const recipientId = selectedContactId || connectedPeerId;
+
+            for (let file of files) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    socket.emit('send_file', {
+                        recipientDeviceId: recipientId,
+                        fileName: file.name,
+                        fileSize: file.size,
+                        fileData: e.target.result
+                    });
+                    showNotification(`جاري إرسال ${file.name}...`, 'success');
+                };
+                reader.readAsArrayBuffer(file);
+            }
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        // إدارة الجهات
+        // ─────────────────────────────────────────────────────────────
+
+        function loadContacts() {
+            socket.emit('get_contacts', ({ success, contacts }) => {
+                if (success && contacts.length > 0) {
+                    renderContacts(contacts);
+                }
+            });
+        }
+
+        function renderContacts(contacts) {
+            const list = document.getElementById('contactsList');
+            list.innerHTML = contacts.map(contact => `
+                <div class="contact-item" onclick="selectContact('${contact.deviceId}', this)">
+                    <div class="contact-avatar">${contact.name[0]}</div>
+                    <div class="contact-details">
+                        <div class="contact-name">${contact.name}</div>
+                        <div class="contact-status ${contact.isOnline ? 'status-online' : 'status-offline'}">
+                            ${contact.isOnline ? 'متصل' : 'غير متصل'}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function selectContact(deviceId, element) {
+            document.querySelectorAll('.contact-item').forEach(e => e.classList.remove('active'));
+            element.classList.add('active');
+            selectedContactId = deviceId;
+            document.getElementById('headerTitle').textContent = element.querySelector('.contact-name').textContent;
+        }
+
+        function updateContactStatus(deviceId, isOnline, name) {
+            loadContacts();
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        // الإشعارات
+        // ─────────────────────────────────────────────────────────────
+
+        function showNotification(message, type = 'info') {
+            const container = document.getElementById('notificationsContainer');
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            
+            container.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 4000);
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        // الملفات
+        // ─────────────────────────────────────────────────────────────
+
+        function downloadFile(fileData, fileName) {
+            const blob = new Blob([fileData]);
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function refreshPendingFiles() {
+            // محدّث الملفات المعلقة
+        }
+
+        function copyCode() {
+            navigator.clipboard.writeText(myDeviceId);
+            showNotification("تم النسخ ✅", 'success');
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        // البدء
+        // ─────────────────────────────────────────────────────────────
+
+        document.getElementById('deviceNameInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') setupDevice();
+        });
+
+        document.getElementById('pairingInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') connectToPeer();
+        });
+    </script>
 </body>
 </html>
