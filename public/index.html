@@ -1,6 +1,31 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
+  <!-- ★ SW KILLER — يجب أن يكون أول شيء يُنفَّذ ★ -->
+  <script>
+    (function(){
+      var V = '3.0.0';
+      if (localStorage.getItem('ar_ver') !== V) {
+        // احذف كل الـ Service Workers
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function(regs){
+            regs.forEach(function(r){ r.unregister(); });
+          });
+        }
+        // احذف كل الكاش
+        if ('caches' in window) {
+          caches.keys().then(function(keys){
+            keys.forEach(function(k){ caches.delete(k); });
+          });
+        }
+        localStorage.setItem('ar_ver', V);
+        // أعد تحميل الصفحة مرة واحدة بعد التنظيف
+        if (performance.navigation.type !== 1) {
+          setTimeout(function(){ location.reload(true); }, 200);
+        }
+      }
+    })();
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#0a0f1e">

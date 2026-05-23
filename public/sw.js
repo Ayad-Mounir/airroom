@@ -3,7 +3,7 @@
 //  استراتيجية: Network First للـ HTML، Cache First للأصول
 // ═══════════════════════════════════════════════════════════════
 
-const CACHE_NAME = 'airroom-v3';
+const CACHE_NAME = 'airroom-v4';
 
 const PRECACHE_URLS = [
   '/',
