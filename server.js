@@ -180,6 +180,10 @@ app.get('/api/check-username/:username', async (req, res) => {
 
 app.get('/health', (req, res) => res.json({ status: 'ok', online: onlineUsers.size }));
 
+app.get('/install.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'install.html'));
+});
+
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
