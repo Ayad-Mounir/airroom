@@ -135,7 +135,7 @@ io.on('connection', (socket) => {
 });
 
 // ─── تشغيل الخادم ─────────────────────────────────────────────
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 server.listen(PORT, () => {
   console.log(`✅ AirRoom يعمل على المنفذ ${PORT}`);
   console.log(`🌐 افتح: http://localhost:${PORT}`);
