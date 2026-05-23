@@ -1,106 +1,126 @@
 // ═══════════════════════════════════════════════════════════════
-//  AirRoom — sw.js
-//  المرحلة 6: Service Worker (كاش + إقلاع سريع)
+//  AirRoom — Service Worker v3
+//  استراتيجية: Network First للـ HTML، Cache First للأصول
 // ═══════════════════════════════════════════════════════════════
 
-const CACHE_NAME    = 'airroom-v1';
-const CACHE_VERSION = 1;
+const CACHE_NAME = 'airroom-v3';
 
-// الملفات الأساسية التي تُخزَّن عند التثبيت
 const PRECACHE_URLS = [
   '/',
   '/index.html',
-  '/app.js',
   '/manifest.json',
+  '/icon-192.png',
+  '/icon-512.png'
 ];
 
-// ─── حدث التثبيت: تخزين الملفات الأساسية ────────────────────
+// ─── التثبيت ─────────────────────────────────────────────────
 self.addEventListener('install', (event) => {
-  console.log('[SW] تثبيت الإصدار:', CACHE_NAME);
-
+  console.log('[SW] install:', CACHE_NAME);
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('[SW] تخزين الملفات الأساسية…');
-      return cache.addAll(PRECACHE_URLS);
-    }).then(() => {
-      // تفعيل الـ SW فوراً بدون انتظار إغلاق التبويبات القديمة
-      return self.skipWaiting();
-    })
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(PRECACHE_URLS))
+      .then(() => self.skipWaiting())
   );
 });
 
-// ─── حدث التفعيل: حذف الكاشات القديمة ───────────────────────
+// ─── التفعيل: حذف الكاشات القديمة ───────────────────────────
 self.addEventListener('activate', (event) => {
-  console.log('[SW] تفعيل:', CACHE_NAME);
-
+  console.log('[SW] activate:', CACHE_NAME);
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames
-          .filter((name) => name !== CACHE_NAME)
-          .map((name) => {
-            console.log('[SW] حذف كاش قديم:', name);
-            return caches.delete(name);
-          })
-      );
-    }).then(() => {
-      // السيطرة على جميع التبويبات المفتوحة فوراً
-      return self.clients.claim();
-    })
+    caches.keys()
+      .then(keys => Promise.all(
+        keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
+      ))
+      .then(() => self.clients.claim())
   );
 });
 
-// ─── حدث الطلبات: استراتيجية Cache First ──────────────────────
+// ─── الطلبات ─────────────────────────────────────────────────
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // تجاهل طلبات Socket.io — هي دائماً شبكة
-  if (url.pathname.startsWith('/socket.io')) {
-    return;
-  }
+  // تجاهل Socket.io وطلبات POST
+  if (url.pathname.startsWith('/socket.io') || request.method !== 'GET') return;
 
-  // تجاهل طلبات POST وغير GET
-  if (request.method !== 'GET') {
-    return;
-  }
-
-  // تجاهل الطلبات من نطاقات خارجية (Google Fonts مثلاً)
-  // نتركها تمر عبر الشبكة مباشرة
+  // طلبات خارجية — شبكة مباشرة
   if (url.origin !== self.location.origin) {
-    event.respondWith(fetch(request).catch(() => new Response('', { status: 503 })));
+    event.respondWith(
+      fetch(request).catch(() => new Response('', { status: 503 }))
+    );
     return;
   }
 
-  // Cache First: ابحث في الكاش أولاً، وإن لم يوجد اجلب من الشبكة وخزّن
-  event.respondWith(
-    caches.match(request).then((cached) => {
-      if (cached) {
-        console.log('[SW] من الكاش:', url.pathname);
-        return cached;
-      }
+  // API — شبكة دائماً (لا كاش)
+  if (url.pathname.startsWith('/api/')) {
+    event.respondWith(
+      fetch(request).catch(() => new Response(JSON.stringify({ error: 'offline' }), {
+        status: 503,
+        headers: { 'Content-Type': 'application/json' }
+      }))
+    );
+    return;
+  }
 
-      // غير موجود في الكاش — اجلب من الشبكة
-      return fetch(request).then((response) => {
-        // لا تخزّن إلا الاستجابات الصحيحة
-        if (!response || response.status !== 200 || response.type === 'error') {
+  // HTML — Network First (نضمن تحديث الكود دائماً)
+  if (request.destination === 'document' || url.pathname === '/') {
+    event.respondWith(
+      fetch(request)
+        .then(response => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(c => c.put(request, clone));
+          }
           return response;
+        })
+        .catch(() => caches.match('/index.html'))
+    );
+    return;
+  }
+
+  // أصول ثابتة — Cache First
+  event.respondWith(
+    caches.match(request).then(cached => {
+      if (cached) return cached;
+      return fetch(request).then(response => {
+        if (response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(c => c.put(request, clone));
         }
-
-        // خزّن نسخة من الاستجابة في الكاش
-        const responseClone = response.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(request, responseClone);
-        });
-
         return response;
-      }).catch(() => {
-        // بدون شبكة ولا كاش — أعد صفحة HTML الأساسية إن أمكن
-        if (request.destination === 'document') {
-          return caches.match('/index.html');
-        }
-        return new Response('', { status: 503, statusText: 'Service Unavailable' });
-      });
+      }).catch(() => new Response('', { status: 503 }));
+    })
+  );
+});
+
+// ─── Push Notifications ──────────────────────────────────────
+self.addEventListener('push', (event) => {
+  if (!event.data) return;
+  let payload;
+  try { payload = event.data.json(); }
+  catch { payload = { title: 'AirRoom', body: event.data.text() }; }
+
+  event.waitUntil(
+    self.registration.showNotification(payload.title || 'AirRoom', {
+      body:             payload.body || '',
+      icon:             '/icon-192.png',
+      badge:            '/icon-192.png',
+      tag:              payload.tag || 'airroom',
+      vibrate:          [200, 100, 200],
+      requireInteraction: payload.requireInteraction || false,
+      data:             payload.data || {}
+    })
+  );
+});
+
+// ─── نقر على الإشعار ─────────────────────────────────────────
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+      const existing = list.find(c => c.url.includes(self.location.origin));
+      if (existing) return existing.focus();
+      return clients.openWindow('/');
     })
   );
 });

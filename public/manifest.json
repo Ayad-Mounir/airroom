@@ -1,13 +1,13 @@
 {
   "name": "AirRoom — مشاركة الملفات",
   "short_name": "AirRoom",
-  "description": "نقل الملفات فوراً عبر الشبكة — بدون خوادم وسيطة",
+  "description": "مشاركة الملفات P2P فوراً — مثل واتساب",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#05070f",
-  "theme_color": "#6366f1",
+  "background_color": "#075e54",
+  "theme_color": "#075e54",
   "lang": "ar",
   "dir": "rtl",
   "icons": [
@@ -24,6 +24,5 @@
       "purpose": "any maskable"
     }
   ],
-  "screenshots": [],
   "categories": ["utilities", "productivity"]
 }
