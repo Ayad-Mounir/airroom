@@ -1,902 +1,673 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AirRoom - مشاركة الملفات</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AirRoom — مشاركة الملفات</title>
+  <link rel="manifest" href="/manifest.json">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background: linear-gradient(135deg, #075e54 0%, #128c7e 100%);
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: linear-gradient(135deg, #075e54 0%, #128c7e 100%);
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
 
-        /* شاشة التسجيل */
-        .auth-screen {
-            background: white;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-            max-width: 400px;
-            width: 90%;
-        }
+    /* ─── شاشة المصادقة ─── */
+    .auth-screen {
+      background: white;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      max-width: 400px;
+      width: 90%;
+    }
+    .auth-screen h1 { color: #075e54; margin-bottom: 8px; text-align: center; font-size: 28px; }
+    .auth-screen .subtitle { color: #999; text-align: center; margin-bottom: 28px; font-size: 14px; }
 
-        .auth-screen h1 {
-            color: #075e54;
-            margin-bottom: 10px;
-            text-align: center;
-            font-size: 28px;
-        }
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; color: #333; margin-bottom: 8px; font-weight: 500; }
+    .form-group input {
+      width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px;
+      font-size: 14px; font-family: inherit; transition: border 0.3s;
+    }
+    .form-group input:focus { outline: none; border-color: #075e54; box-shadow: 0 0 0 3px rgba(7,94,84,0.1); }
 
-        .auth-screen .subtitle {
-            color: #999;
-            text-align: center;
-            margin-bottom: 30px;
-            font-size: 14px;
-        }
+    .error   { color: #f44336; font-size: 13px; margin-top: 5px; min-height: 18px; }
+    .success { color: #4caf50; font-size: 13px; margin-top: 5px; min-height: 18px; }
 
-        .form-group {
-            margin-bottom: 20px;
-        }
+    .button {
+      width: 100%; padding: 12px; background: #075e54; color: white;
+      border: none; border-radius: 6px; font-size: 14px; font-weight: 600;
+      cursor: pointer; transition: background 0.3s; margin-top: 10px;
+    }
+    .button:hover { background: #054d43; }
+    .button:disabled { background: #ccc; cursor: not-allowed; }
 
-        .form-group label {
-            display: block;
-            color: #333;
-            margin-bottom: 8px;
-            font-weight: 500;
-        }
+    .toggle-mode { text-align: center; margin-top: 20px; color: #999; font-size: 14px; }
+    .toggle-mode button {
+      background: none; border: none; color: #075e54;
+      cursor: pointer; font-weight: 600; text-decoration: underline;
+    }
 
-        .form-group input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 14px;
-            font-family: inherit;
-            transition: border 0.3s;
-        }
+    /* ─── التطبيق الرئيسي ─── */
+    body.authenticated { background: #f0f0f0; }
 
-        .form-group input:focus {
-            outline: none;
-            border-color: #075e54;
-            box-shadow: 0 0 0 3px rgba(7, 94, 84, 0.1);
-        }
+    .main-app { display: none; width: 100%; height: 100vh; }
+    .main-app.show { display: flex; }
 
-        .error {
-            color: #f44336;
-            font-size: 13px;
-            margin-top: 5px;
-        }
+    .sidebar {
+      width: 30%; background: white;
+      border-left: 1px solid #e0e0e0;
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .sidebar-header {
+      padding: 15px; border-bottom: 1px solid #e0e0e0;
+      background: #075e54; color: white;
+    }
+    .sidebar-header h2 { font-size: 18px; margin-bottom: 5px; }
+    .sidebar-header .user-info { font-size: 12px; opacity: 0.9; }
+    .sidebar-header .logout {
+      background: rgba(255,255,255,0.2); border: none; color: white;
+      padding: 5px 10px; border-radius: 4px; cursor: pointer;
+      font-size: 12px; margin-top: 10px;
+    }
+    .sidebar-header .logout:hover { background: rgba(255,255,255,0.3); }
 
-        .success {
-            color: #4caf50;
-            font-size: 13px;
-            margin-top: 5px;
-        }
+    .contacts-list { flex: 1; overflow-y: auto; padding: 10px 0; }
 
-        .button {
-            width: 100%;
-            padding: 12px;
-            background: #075e54;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.3s;
-            margin-top: 10px;
-        }
+    .contact-item {
+      padding: 12px 15px; border-bottom: 1px solid #f0f0f0;
+      cursor: pointer; transition: background 0.2s;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .contact-item:hover { background: #f5f5f5; }
+    .contact-item.active { background: #e8f5e9; border-right: 4px solid #075e54; }
 
-        .button:hover {
-            background: #054d43;
-        }
+    .contact-avatar {
+      width: 45px; height: 45px; border-radius: 50%;
+      background: #075e54; color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: bold; font-size: 18px; flex-shrink: 0;
+    }
+    .contact-details { flex: 1; min-width: 0; }
+    .contact-name { font-weight: 500; color: #000; }
+    .contact-status { font-size: 12px; color: #999; }
 
-        .button:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
+    .main-area { flex: 1; display: flex; flex-direction: column; background: white; min-width: 0; }
 
-        .toggle-mode {
-            text-align: center;
-            margin-top: 20px;
-            color: #999;
-            font-size: 14px;
-        }
+    .app-header {
+      padding: 15px 25px; background: #075e54; color: white;
+      display: flex; align-items: center; gap: 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .app-header h1 { font-size: 20px; }
 
-        .toggle-mode button {
-            background: none;
-            border: none;
-            color: #075e54;
-            cursor: pointer;
-            font-weight: 600;
-            text-decoration: underline;
-        }
+    .content { flex: 1; display: flex; flex-direction: column; padding: 25px; overflow-y: auto; }
 
-        /* الواجهة الرئيسية */
-        body.authenticated {
-            background: #f0f0f0;
-        }
+    .welcome-section {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 20px; text-align: center;
+    }
+    .welcome-section h2 { color: #075e54; font-size: 24px; }
 
-        .main-app {
-            display: none;
-            width: 100%;
-            height: 100vh;
-            display: flex;
-        }
+    .add-contact-form {
+      display: flex; gap: 10px; margin: 20px 0;
+      width: 100%; max-width: 500px;
+    }
+    .add-contact-form input {
+      flex: 1; padding: 12px; border: 1px solid #ccc;
+      border-radius: 6px; font-size: 14px; font-family: inherit;
+    }
+    .add-contact-form button {
+      padding: 12px 25px; background: #075e54; color: white;
+      border: none; border-radius: 6px; cursor: pointer; font-weight: 500;
+      white-space: nowrap;
+    }
+    .add-contact-form button:hover { background: #054d43; }
 
-        .main-app.show {
-            display: flex;
-        }
+    /* ─── منطقة الملفات ─── */
+    .file-area { display: none; width: 100%; flex-direction: column; flex: 1; gap: 15px; }
+    .file-area.show { display: flex; }
 
-        .sidebar {
-            width: 30%;
-            background: white;
-            border-left: 1px solid #e0e0e0;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
+    .drop-zone {
+      flex: 1; border: 3px dashed #ccc; border-radius: 10px;
+      padding: 40px; text-align: center;
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column; cursor: pointer; transition: all 0.3s; color: #999;
+      min-height: 200px;
+    }
+    .drop-zone:hover, .drop-zone.dragover {
+      border-color: #075e54; background: #f0fdf4; color: #075e54;
+    }
+    .drop-zone-icon { font-size: 48px; margin-bottom: 15px; }
+    .drop-zone-text h2 { color: #075e54; margin-bottom: 10px; }
 
-        .sidebar-header {
-            padding: 15px;
-            border-bottom: 1px solid #e0e0e0;
-            background: #075e54;
-            color: white;
-        }
+    /* ─── شريط التقدم ─── */
+    .progress-wrap { display: none; }
+    .progress-wrap.show { display: block; }
+    .progress-bar-bg {
+      background: #e0e0e0; border-radius: 10px; height: 8px; overflow: hidden; margin: 4px 0;
+    }
+    .progress-bar-fill { height: 100%; background: #075e54; border-radius: 10px; transition: width 0.3s; width: 0%; }
+    .progress-label { font-size: 13px; color: #555; }
 
-        .sidebar-header h2 {
-            font-size: 18px;
-            margin-bottom: 5px;
-        }
+    /* ─── الإشعارات ─── */
+    .notifications {
+      position: fixed; top: 20px; right: 20px;
+      z-index: 1000; max-width: 380px;
+    }
+    .notification {
+      background: white; padding: 14px 16px; margin-bottom: 10px;
+      border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      animation: slideIn 0.3s ease; border-right: 4px solid #075e54;
+      font-size: 14px;
+    }
+    .notification.error   { border-right-color: #f44336; }
+    .notification.success { border-right-color: #4caf50; }
 
-        .sidebar-header .user-info {
-            font-size: 12px;
-            opacity: 0.9;
-            cursor: pointer;
-        }
+    @keyframes slideIn {
+      from { transform: translateX(420px); opacity: 0; }
+      to   { transform: translateX(0);     opacity: 1; }
+    }
 
-        .sidebar-header .logout {
-            background: rgba(255,255,255,0.2);
-            border: none;
-            color: white;
-            padding: 5px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            margin-top: 10px;
-        }
-
-        .sidebar-header .logout:hover {
-            background: rgba(255,255,255,0.3);
-        }
-
-        .contacts-list {
-            flex: 1;
-            overflow-y: auto;
-            padding: 10px 0;
-        }
-
-        .contact-item {
-            padding: 12px 15px;
-            border-bottom: 1px solid #f0f0f0;
-            cursor: pointer;
-            transition: background 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .contact-item:hover {
-            background: #f5f5f5;
-        }
-
-        .contact-item.active {
-            background: #e8f5e9;
-            border-right: 4px solid #075e54;
-        }
-
-        .contact-avatar {
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            background: #075e54;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 18px;
-        }
-
-        .contact-details {
-            flex: 1;
-        }
-
-        .contact-name {
-            font-weight: 500;
-            color: #000;
-        }
-
-        .contact-status {
-            font-size: 12px;
-            color: #999;
-        }
-
-        .status-online::after {
-            content: " 🟢";
-        }
-
-        .status-offline::after {
-            content: " ⚪";
-        }
-
-        .main-area {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background: white;
-        }
-
-        .header {
-            padding: 15px 25px;
-            background: #075e54;
-            color: white;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .header h1 {
-            font-size: 20px;
-        }
-
-        .content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            padding: 25px;
-            overflow-y: auto;
-        }
-
-        .welcome-section {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 20px;
-            text-align: center;
-        }
-
-        .welcome-section h2 {
-            color: #075e54;
-            font-size: 24px;
-        }
-
-        .add-contact-form {
-            display: flex;
-            gap: 10px;
-            margin: 20px 0;
-            width: 100%;
-            max-width: 500px;
-        }
-
-        .add-contact-form input {
-            flex: 1;
-            padding: 12px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            font-size: 14px;
-        }
-
-        .add-contact-form button {
-            padding: 12px 25px;
-            background: #075e54;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 500;
-        }
-
-        .drop-zone {
-            flex: 1;
-            border: 3px dashed #ccc;
-            border-radius: 10px;
-            padding: 40px;
-            text-align: center;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            cursor: pointer;
-            transition: all 0.3s;
-            color: #999;
-        }
-
-        .drop-zone:hover,
-        .drop-zone.dragover {
-            border-color: #075e54;
-            background: #f0fdf4;
-            color: #075e54;
-        }
-
-        .drop-zone-icon {
-            font-size: 48px;
-            margin-bottom: 15px;
-        }
-
-        .drop-zone-text h2 {
-            color: #075e54;
-            margin-bottom: 10px;
-        }
-
-        .notifications {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1000;
-            max-width: 400px;
-        }
-
-        .notification {
-            background: white;
-            padding: 15px;
-            margin-bottom: 10px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            animation: slideIn 0.3s ease;
-            border-right: 4px solid #075e54;
-        }
-
-        .notification.error {
-            border-right-color: #f44336;
-        }
-
-        .notification.success {
-            border-right-color: #4caf50;
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateX(400px);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
-        @media (max-width: 768px) {
-            body {
-                flex-direction: column;
-            }
-
-            .sidebar {
-                width: 100%;
-                height: 30%;
-                border-left: none;
-                border-bottom: 1px solid #e0e0e0;
-            }
-
-            .main-area {
-                height: 70%;
-            }
-
-            .add-contact-form {
-                flex-direction: column;
-            }
-
-            .auth-screen {
-                border-radius: 0;
-            }
-        }
-    </style>
+    /* ─── Responsive ─── */
+    @media (max-width: 768px) {
+      .main-app.show { flex-direction: column; }
+      .sidebar { width: 100%; height: 35%; border-left: none; border-bottom: 1px solid #e0e0e0; }
+      .main-area { height: 65%; }
+      .add-contact-form { flex-direction: column; }
+      .auth-screen { border-radius: 0; min-height: 100vh; padding: 30px 20px; }
+    }
+  </style>
 </head>
 <body>
-    <!-- شاشة التسجيل -->
-    <div id="authScreen" class="auth-screen">
-        <h1>🌐 AirRoom</h1>
-        <p class="subtitle">مشاركة الملفات بسهولة</p>
 
-        <!-- شاشة التسجيل الأول (اختيار اسم مستخدم فريد) -->
-        <div id="firstTimeScreen">
-            <p style="color: #666; text-align: center; margin-bottom: 20px; font-size: 13px;">
-                👋 مرحباً بك! هذا هو تسجيلك الأول
-            </p>
-            <div class="form-group">
-                <label for="newUsernameInput">اختر اسم مستخدم فريد</label>
-                <input type="text" id="newUsernameInput" placeholder="مثال: أحمد_الجهاز" maxlength="30">
-                <div id="firstTimeError" class="error"></div>
-                <div id="firstTimeSuccess" class="success"></div>
-            </div>
+  <!-- ═══ شاشة المصادقة ═══ -->
+  <div id="authScreen" class="auth-screen">
+    <h1>🌐 AirRoom</h1>
+    <p class="subtitle">مشاركة الملفات P2P بسهولة</p>
 
-            <p style="color: #999; text-align: center; margin: 15px 0; font-size: 12px;">
-                ⚠️ لا يمكن تغيير هذا الاسم لاحقاً
-            </p>
-
-            <button class="button" id="registerFirstTimeBtn" onclick="registerFirstTime()" disabled>
-                إنشاء حساب جديد
-            </button>
-        </div>
-
-        <!-- شاشة تسجيل الدخول (للمستخدمين المسجلين) -->
-        <div id="loginExistingScreen" style="display: none;">
-            <p style="color: #666; text-align: center; margin-bottom: 20px; font-size: 13px;">
-                👋 مرحباً بعودتك!
-            </p>
-            <div class="form-group">
-                <label for="existingUsernameInput">أدخل اسم المستخدم</label>
-                <input type="text" id="existingUsernameInput" placeholder="اسم المستخدم الخاص بك">
-                <div id="loginExistingError" class="error"></div>
-            </div>
-
-            <button class="button" onclick="reconnectUser()">تسجيل الدخول</button>
-
-            <div class="toggle-mode">
-                أول مرة؟
-                <button onclick="switchToFirstTime()">إنشاء حساب جديد</button>
-            </div>
-        </div>
+    <!-- تسجيل أول مرة -->
+    <div id="firstTimeScreen">
+      <p style="color:#666;text-align:center;margin-bottom:20px;font-size:13px">
+        👋 مرحباً بك! اختر اسم مستخدم فريد
+      </p>
+      <div class="form-group">
+        <label for="newUsernameInput">اسم المستخدم</label>
+        <input type="text" id="newUsernameInput" placeholder="مثال: أحمد_123" maxlength="30" autocomplete="off">
+        <div id="firstTimeError" class="error"></div>
+        <div id="firstTimeSuccess" class="success"></div>
+      </div>
+      <p style="color:#999;text-align:center;margin:15px 0;font-size:12px">⚠️ لا يمكن تغيير هذا الاسم لاحقاً</p>
+      <button class="button" id="registerFirstTimeBtn" onclick="registerFirstTime()" disabled>
+        إنشاء حساب جديد
+      </button>
+      <div class="toggle-mode">
+        لديك حساب؟
+        <button onclick="switchToExistingUser()">تسجيل الدخول</button>
+      </div>
     </div>
 
-    <!-- التطبيق الرئيسي -->
-    <div id="mainApp" class="main-app">
-        <!-- الشريط الجانبي -->
-        <div class="sidebar">
-            <div class="sidebar-header">
-                <h2>🌐 AirRoom</h2>
-                <div class="user-info">
-                    👤 <span id="currentUsername">Loading...</span>
-                </div>
-                <button class="logout" onclick="logout()">🚪 خروج</button>
-            </div>
-            <div class="contacts-list" id="contactsList">
-                <div style="padding: 20px; text-align: center; color: #999;">
-                    🔗 لا توجد جهات اتصال بعد
-                </div>
-            </div>
-        </div>
+    <!-- تسجيل دخول -->
+    <div id="loginExistingScreen" style="display:none">
+      <p style="color:#666;text-align:center;margin-bottom:20px;font-size:13px">👋 مرحباً بعودتك!</p>
+      <div class="form-group">
+        <label for="existingUsernameInput">اسم المستخدم</label>
+        <input type="text" id="existingUsernameInput" placeholder="أدخل اسمك" autocomplete="username">
+        <div id="loginError" class="error"></div>
+      </div>
+      <button class="button" id="loginBtn" onclick="reconnectUser()">تسجيل الدخول</button>
+      <div class="toggle-mode">
+        أول مرة؟
+        <button onclick="switchToFirstTime()">إنشاء حساب جديد</button>
+      </div>
+    </div>
+  </div>
 
-        <!-- المنطقة الرئيسية -->
-        <div class="main-area">
-            <div class="header">
-                <h1 id="headerTitle">مرحباً بك في AirRoom</h1>
-            </div>
-
-            <div class="content" id="content">
-                <div class="welcome-section">
-                    <h2>🚀 أضف جهة اتصال</h2>
-                    <p style="color: #999;">ابحث عن صديق باسم المستخدم وابدأ المشاركة</p>
-                    
-                    <div class="add-contact-form">
-                        <input type="text" id="searchUsername" placeholder="أدخل اسم المستخدم">
-                        <button onclick="addContact()">ربط</button>
-                    </div>
-
-                    <div id="fileAreaContainer" style="display: none; width: 100%; flex: 1;">
-                        <div class="drop-zone" id="dropZone">
-                            <div class="drop-zone-icon">📁</div>
-                            <div class="drop-zone-text">
-                                <h2>اسحب الملفات هنا</h2>
-                                <p>أو اضغط للاختيار</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+  <!-- ═══ التطبيق الرئيسي ═══ -->
+  <div id="mainApp" class="main-app">
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <h2>🌐 AirRoom</h2>
+        <div class="user-info">👤 <span id="currentUsername">...</span></div>
+        <button class="logout" onclick="logout()">🚪 خروج</button>
+      </div>
+      <div class="contacts-list" id="contactsList">
+        <div style="padding:20px;text-align:center;color:#999">🔗 لا توجد جهات اتصال بعد</div>
+      </div>
     </div>
 
-    <!-- الإشعارات -->
-    <div class="notifications" id="notificationsContainer"></div>
+    <div class="main-area">
+      <div class="app-header">
+        <h1 id="headerTitle">مرحباً في AirRoom 🌐</h1>
+      </div>
+      <div class="content" id="content">
+        <div class="welcome-section" id="welcomeSection">
+          <h2>🚀 أضف جهة اتصال</h2>
+          <p style="color:#999">ابحث عن صديق باسم المستخدم وابدأ المشاركة</p>
+          <div class="add-contact-form">
+            <input type="text" id="searchUsername" placeholder="أدخل اسم المستخدم">
+            <button onclick="addContact()">ربط ➕</button>
+          </div>
+        </div>
 
-    <input type="file" id="fileInput" class="file-input" multiple style="display: none;">
+        <div class="file-area" id="fileArea">
+          <!-- شريط التقدم للإرسال -->
+          <div class="progress-wrap" id="sendProgressWrap">
+            <div class="progress-label" id="sendProgressLabel">جاري الإرسال...</div>
+            <div class="progress-bar-bg"><div class="progress-bar-fill" id="sendProgressBar"></div></div>
+          </div>
+          <!-- شريط التقدم للاستقبال -->
+          <div class="progress-wrap" id="recvProgressWrap">
+            <div class="progress-label" id="recvProgressLabel">جاري الاستقبال...</div>
+            <div class="progress-bar-bg"><div class="progress-bar-fill" id="recvProgressBar"></div></div>
+          </div>
 
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    <script>
-        let socket;
-        let currentUserId;
-        let currentUsername;
-        let currentDeviceId;
-        let selectedContactId;
-        let selectedContactUsername;
+          <div class="drop-zone" id="dropZone">
+            <div class="drop-zone-icon">📁</div>
+            <div class="drop-zone-text">
+              <h2>اسحب الملفات هنا</h2>
+              <p>أو اضغط للاختيار من جهازك</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-        // ─────────────────────────────────────────────────────────────
-        // التسجيل والدخول - النظام الجديد
-        // ─────────────────────────────────────────────────────────────
+  <!-- الإشعارات -->
+  <div class="notifications" id="notificationsContainer"></div>
 
-        // تهيئة شاشة المصادقة عند البداية
-        function initAuthScreen() {
-            const savedUsername = localStorage.getItem('airroom_username');
-            
-            if (savedUsername) {
-                // لديه حساب مسجل
-                switchToExistingUser();
-            } else {
-                // أول مرة
-                switchToFirstTime();
-            }
+  <!-- file input مخفي -->
+  <input type="file" id="fileInput" multiple style="display:none">
+
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script>
+    // ═══════════════════════════════════════════════════════════════
+    //  الحالة العامة
+    // ═══════════════════════════════════════════════════════════════
+    let socket;
+    let currentUserId       = null;
+    let currentUsername     = null;
+    let currentDeviceId     = null;
+    let selectedContactId   = null;
+    let selectedContactName = null;
+
+    // ═══════════════════════════════════════════════════════════════
+    //  تهيئة Socket
+    // ═══════════════════════════════════════════════════════════════
+    socket = io();
+
+    socket.on('connect', () => {
+      console.log('[Socket] متصل:', socket.id);
+      initAuthScreen();
+    });
+
+    socket.on('disconnect', () => {
+      console.log('[Socket] انقطع الاتصال');
+    });
+
+    // ─── أحداث جهات الاتصال ─────────────────────────────────────
+    socket.on('contact_online', ({ userId, username }) => {
+      showNotification(`${username} متصل الآن 🟢`, 'success');
+      loadContacts();
+    });
+
+    socket.on('contact_offline', ({ userId, username }) => {
+      showNotification(`${username} غير متصل ⚪`, 'error');
+      loadContacts();
+    });
+
+    socket.on('user_added_as_contact', ({ userId, username }) => {
+      showNotification(`${username} أضافك كجهة اتصال! 🔗`, 'success');
+      loadContacts();
+    });
+
+    // ─── أحداث الملفات ──────────────────────────────────────────
+    socket.on('receive_file', ({ senderUsername, fileName, fileSize, fileData }) => {
+      downloadFile(fileData, fileName);
+      showNotification(`📥 استُقبل من ${senderUsername}: ${fileName}`, 'success');
+    });
+
+    socket.on('receive_pending_file', ({ senderUsername, fileName, fileData }) => {
+      downloadFile(fileData, fileName);
+      showNotification(`📋 ملف معلق من ${senderUsername}: ${fileName}`, 'success');
+    });
+
+    socket.on('file_sent_success', ({ fileName }) => {
+      showNotification(`✅ تم إرسال ${fileName}`, 'success');
+    });
+
+    socket.on('file_queued', ({ fileName }) => {
+      showNotification(`📋 ${fileName} في قائمة الانتظار — سيُرسل عند الاتصال`, 'success');
+    });
+
+    socket.on('file_error', ({ error }) => {
+      showNotification(`❌ ${error}`, 'error');
+    });
+
+    // ═══════════════════════════════════════════════════════════════
+    //  المصادقة
+    // ═══════════════════════════════════════════════════════════════
+    function initAuthScreen() {
+      const savedUsername = localStorage.getItem('airroom_username');
+      if (savedUsername) {
+        switchToExistingUser();
+        document.getElementById('existingUsernameInput').value = savedUsername;
+      } else {
+        switchToFirstTime();
+      }
+    }
+
+    function switchToFirstTime() {
+      document.getElementById('firstTimeScreen').style.display = 'block';
+      document.getElementById('loginExistingScreen').style.display = 'none';
+      document.getElementById('newUsernameInput').focus();
+    }
+
+    function switchToExistingUser() {
+      document.getElementById('firstTimeScreen').style.display = 'none';
+      document.getElementById('loginExistingScreen').style.display = 'block';
+      document.getElementById('existingUsernameInput').focus();
+    }
+
+    // التحقق الفوري من اسم المستخدم
+    let checkTimeout;
+    document.getElementById('newUsernameInput').addEventListener('input', (e) => {
+      const val = e.target.value.trim();
+      clearTimeout(checkTimeout);
+      document.getElementById('registerFirstTimeBtn').disabled = true;
+      if (val.length < 3) {
+        document.getElementById('firstTimeError').textContent = val.length > 0 ? 'يجب أن يكون 3 أحرف على الأقل' : '';
+        document.getElementById('firstTimeSuccess').textContent = '';
+        return;
+      }
+      checkTimeout = setTimeout(() => checkUsername(val), 400);
+    });
+
+    async function checkUsername(username) {
+      try {
+        const res = await fetch(`/api/check-username/${encodeURIComponent(username)}`);
+        const data = await res.json();
+        if (data.available) {
+          document.getElementById('firstTimeError').textContent = '';
+          document.getElementById('firstTimeSuccess').textContent = '✅ هذا الاسم متوفر!';
+          document.getElementById('registerFirstTimeBtn').disabled = false;
+        } else {
+          document.getElementById('firstTimeError').textContent = '❌ هذا الاسم مستخدم بالفعل';
+          document.getElementById('firstTimeSuccess').textContent = '';
+          document.getElementById('registerFirstTimeBtn').disabled = true;
         }
+      } catch {
+        document.getElementById('firstTimeError').textContent = 'خطأ في التحقق';
+      }
+    }
 
-        // التبديل إلى شاشة التسجيل الأول
-        function switchToFirstTime() {
-            document.getElementById('firstTimeScreen').style.display = 'block';
-            document.getElementById('loginExistingScreen').style.display = 'none';
-            document.getElementById('newUsernameInput').focus();
-            document.getElementById('firstTimeError').textContent = '';
-            document.getElementById('firstTimeSuccess').textContent = '';
+    function registerFirstTime() {
+      const username = document.getElementById('newUsernameInput').value.trim();
+      const errorDiv = document.getElementById('firstTimeError');
+      const btn = document.getElementById('registerFirstTimeBtn');
+
+      if (!username || username.length < 3) {
+        errorDiv.textContent = 'اسم المستخدم يجب أن يكون 3 أحرف على الأقل';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'جاري التسجيل...';
+
+      socket.emit('register_new_user', { username }, (result) => {
+        if (result.success) {
+          currentUserId   = result.userId;
+          currentUsername = result.username;
+          currentDeviceId = result.deviceId;
+          localStorage.setItem('airroom_username', result.username);
+          document.getElementById('firstTimeSuccess').textContent = '✅ تم التسجيل!';
+          setTimeout(() => { showApp(); showNotification(`مرحباً ${result.username}! 🎉`, 'success'); }, 800);
+        } else {
+          errorDiv.textContent = result.error || 'فشل التسجيل';
+          btn.disabled = false;
+          btn.textContent = 'إنشاء حساب جديد';
         }
+      });
+    }
 
-        // التبديل إلى شاشة المستخدم الموجود
-        function switchToExistingUser() {
-            document.getElementById('firstTimeScreen').style.display = 'none';
-            document.getElementById('loginExistingScreen').style.display = 'block';
-            document.getElementById('existingUsernameInput').focus();
-            document.getElementById('loginExistingError').textContent = '';
+    function reconnectUser() {
+      const username = document.getElementById('existingUsernameInput').value.trim();
+      const errorDiv = document.getElementById('loginError');
+      const btn = document.getElementById('loginBtn');
+
+      if (!username) { errorDiv.textContent = 'أدخل اسم المستخدم'; return; }
+
+      btn.disabled = true;
+      btn.textContent = 'جاري الدخول...';
+
+      socket.emit('reconnect_user', { username }, (result) => {
+        if (result.success) {
+          currentUserId   = result.userId;
+          currentUsername = result.username;
+          currentDeviceId = result.deviceId;
+          localStorage.setItem('airroom_username', result.username);
+          showApp();
+          showNotification(`مرحباً ${result.username}! 👋`, 'success');
+        } else {
+          errorDiv.textContent = result.error || 'فشل تسجيل الدخول';
+          btn.disabled = false;
+          btn.textContent = 'تسجيل الدخول';
         }
+      });
+    }
 
-        // التحقق الفوري من توفر اسم المستخدم
-        async function checkUsernameAvailability(username) {
-            if (!username || username.length < 3) {
-                document.getElementById('registerFirstTimeBtn').disabled = true;
-                document.getElementById('firstTimeSuccess').textContent = '';
-                return false;
-            }
+    function logout() {
+      localStorage.removeItem('airroom_username');
+      location.reload();
+    }
 
-            try {
-                const response = await fetch(`/api/check-username/${encodeURIComponent(username)}`);
-                const data = await response.json();
-                
-                if (data.available) {
-                    document.getElementById('firstTimeError').textContent = '';
-                    document.getElementById('firstTimeSuccess').textContent = '✅ هذا الاسم متوفر!';
-                    document.getElementById('registerFirstTimeBtn').disabled = false;
-                    return true;
-                } else {
-                    document.getElementById('firstTimeError').textContent = '❌ هذا الاسم مستخدم بالفعل';
-                    document.getElementById('firstTimeSuccess').textContent = '';
-                    document.getElementById('registerFirstTimeBtn').disabled = true;
-                    return false;
-                }
-            } catch (error) {
-                document.getElementById('firstTimeError').textContent = 'خطأ في التحقق';
-                document.getElementById('registerFirstTimeBtn').disabled = true;
-                console.error('Error checking username:', error);
-                return false;
-            }
+    // ─── Enter key shortcuts ─────────────────────────────────────
+    document.getElementById('newUsernameInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') registerFirstTime(); });
+    document.getElementById('existingUsernameInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') reconnectUser(); });
+    document.getElementById('searchUsername').addEventListener('keypress', (e) => { if (e.key === 'Enter') addContact(); });
+
+    // ═══════════════════════════════════════════════════════════════
+    //  التطبيق الرئيسي
+    // ═══════════════════════════════════════════════════════════════
+    function showApp() {
+      document.getElementById('authScreen').style.display = 'none';
+      document.getElementById('mainApp').classList.add('show');
+      document.body.classList.add('authenticated');
+      document.getElementById('currentUsername').textContent = currentUsername;
+      loadContacts();
+      setupDropZone();
+    }
+
+    // ─── الجهات ─────────────────────────────────────────────────
+    function addContact() {
+      const username = document.getElementById('searchUsername').value.trim();
+      if (!username) { showNotification('أدخل اسم المستخدم أولاً', 'error'); return; }
+      if (username === currentUsername) { showNotification('لا يمكنك إضافة نفسك', 'error'); return; }
+
+      socket.emit('connect_to_user', { targetUsername: username }, (result) => {
+        if (result.success) {
+          document.getElementById('searchUsername').value = '';
+          showNotification(`تم الاتصال مع ${username}! ✅`, 'success');
+          loadContacts();
+        } else {
+          showNotification(result.error || 'فشل الاتصال', 'error');
         }
+      });
+    }
 
-        // إضافة listener للتحقق الفوري
-        document.addEventListener('DOMContentLoaded', () => {
-            const newUsernameInput = document.getElementById('newUsernameInput');
-            if (newUsernameInput) {
-                newUsernameInput.addEventListener('input', (e) => {
-                    checkUsernameAvailability(e.target.value.trim());
-                });
-            }
-        });
+    function loadContacts() {
+      socket.emit('get_contacts', (result) => {
+        if (result.success) renderContacts(result.contacts);
+      });
+    }
 
-        // تسجيل مستخدم جديد (أول مرة)
-        function registerFirstTime() {
-            const username = document.getElementById('newUsernameInput').value.trim();
-            const errorDiv = document.getElementById('firstTimeError');
-            const successDiv = document.getElementById('firstTimeSuccess');
+    function renderContacts(contacts) {
+      const list = document.getElementById('contactsList');
+      if (!contacts || contacts.length === 0) {
+        list.innerHTML = '<div style="padding:20px;text-align:center;color:#999">🔗 لا توجد جهات اتصال بعد</div>';
+        return;
+      }
+      list.innerHTML = contacts.map(c => `
+        <div class="contact-item ${c.contactUserId === selectedContactId ? 'active' : ''}"
+             onclick="selectContact('${c.contactUserId}', '${c.contactUsername}', this)">
+          <div class="contact-avatar">${c.contactUsername[0].toUpperCase()}</div>
+          <div class="contact-details">
+            <div class="contact-name">${c.contactUsername}</div>
+            <div class="contact-status">${c.isOnline ? '🟢 متصل' : '⚪ غير متصل'}</div>
+          </div>
+        </div>
+      `).join('');
+    }
 
-            if (!username) {
-                errorDiv.textContent = "الرجاء إدخال اسم المستخدم";
-                return;
-            }
+    function selectContact(userId, username, el) {
+      document.querySelectorAll('.contact-item').forEach(e => e.classList.remove('active'));
+      if (el) el.classList.add('active');
+      selectedContactId   = userId;
+      selectedContactName = username;
+      document.getElementById('headerTitle').textContent = `💬 ${username}`;
+      document.getElementById('welcomeSection').style.display = 'none';
+      document.getElementById('fileArea').classList.add('show');
+    }
 
-            if (username.length < 3) {
-                errorDiv.textContent = "اسم المستخدم يجب أن يكون 3 أحرف على الأقل";
-                return;
-            }
+    // ─── الملفات ─────────────────────────────────────────────────
+    const CHUNK_SIZE = 256 * 1024;
+    const incomingFiles = new Map();
 
-            // تعطيل الزر أثناء المعالجة
-            document.getElementById('registerFirstTimeBtn').disabled = true;
-            document.getElementById('registerFirstTimeBtn').textContent = 'جاري التسجيل...';
+    function setupDropZone() {
+      const dropZone  = document.getElementById('dropZone');
+      const fileInput = document.getElementById('fileInput');
+      if (!dropZone) return;
 
-            socket.emit('register_new_user', { username }, (result) => {
-                if (result.success) {
-                    currentUserId = result.userId;
-                    currentUsername = result.username;
-                    currentDeviceId = result.deviceId;
+      dropZone.addEventListener('click', () => fileInput.click());
+      dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+      dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+      dropZone.addEventListener('drop', (e) => {
+        e.preventDefault(); dropZone.classList.remove('dragover');
+        handleFiles(e.dataTransfer.files);
+      });
+      fileInput.addEventListener('change', (e) => { handleFiles(e.target.files); fileInput.value = ''; });
 
-                    // احفظ في localStorage - بدون الحاجة إلى deviceId
-                    localStorage.setItem('airroom_username', result.username);
-
-                    successDiv.textContent = '✅ تم التسجيل بنجاح!';
-                    errorDiv.textContent = '';
-                    
-                    setTimeout(() => {
-                        showApp();
-                        showNotification(`مرحباً ${result.username}! 🎉`, 'success');
-                    }, 1000);
-                } else {
-                    errorDiv.textContent = result.error || 'فشل التسجيل';
-                    successDiv.textContent = '';
-                    document.getElementById('registerFirstTimeBtn').disabled = false;
-                    document.getElementById('registerFirstTimeBtn').textContent = 'إنشاء حساب جديد';
-                }
-            });
+      // مستمع استقبال الأجزاء
+      socket.on('receive_chunk', ({ name, type, size, total, index, data }) => {
+        if (!incomingFiles.has(name)) {
+          incomingFiles.set(name, { chunks: new Array(total), total, type, size, received: 0 });
         }
-
-        // تسجيل دخول مستخدم موجود
-        function reconnectUser() {
-            const username = document.getElementById('existingUsernameInput').value.trim();
-            const errorDiv = document.getElementById('loginExistingError');
-
-            if (!username) {
-                errorDiv.textContent = "الرجاء إدخال اسم المستخدم";
-                return;
-            }
-
-            // تعطيل الزر أثناء المعالجة
-            const loginBtn = event.target;
-            loginBtn.disabled = true;
-            loginBtn.textContent = 'جاري التحميل...';
-
-            socket.emit('reconnect_user', { username }, (result) => {
-                if (result.success) {
-                    currentUserId = result.userId;
-                    currentUsername = result.username;
-                    currentDeviceId = result.deviceId;
-
-                    // احفظ في localStorage
-                    localStorage.setItem('airroom_username', result.username);
-
-                    errorDiv.textContent = '';
-                    showApp();
-                    showNotification(`مرحباً ${result.username}! 👋`, 'success');
-                } else {
-                    errorDiv.textContent = result.error || 'فشل تسجيل الدخول';
-                    loginBtn.disabled = false;
-                    loginBtn.textContent = 'تسجيل الدخول';
-                }
-            });
+        const entry = incomingFiles.get(name);
+        entry.chunks[index] = data;
+        entry.received++;
+        setProgress('recv', Math.round((entry.received / total) * 100), name);
+        if (entry.received === total) {
+          assembleAndDownload(name, entry);
+          incomingFiles.delete(name);
         }
+      });
+    }
 
-        function logout() {
-            localStorage.removeItem('airroom_username');
-            location.reload();
-        }
+    function handleFiles(files) {
+      if (!selectedContactId) { showNotification('اختر جهة اتصال أولاً', 'error'); return; }
+      for (const file of files) sendFile(file);
+    }
 
-        function showApp() {
-            document.getElementById('authScreen').style.display = 'none';
-            document.getElementById('mainApp').classList.add('show');
-            document.getElementById('currentUsername').textContent = currentUsername;
-            loadContacts();
-            setupDropZone();
-        }
+    function sendFile(file) {
+      const total = Math.ceil(file.size / CHUNK_SIZE);
+      let index = 0;
+      setProgress('send', 0, file.name);
 
-        // ─────────────────────────────────────────────────────────────
-        // Socket.io الأحداث
-        // ─────────────────────────────────────────────────────────────
+      function readNext() {
+        const blob   = file.slice(index * CHUNK_SIZE, Math.min((index + 1) * CHUNK_SIZE, file.size));
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          socket.emit('send_chunk', {
+            recipientUserId: selectedContactId,
+            name:  file.name,
+            type:  file.type || 'application/octet-stream',
+            size:  file.size,
+            total,
+            index,
+            data:  e.target.result
+          });
+          setProgress('send', Math.round(((index + 1) / total) * 100), file.name);
+          index++;
+          if (index < total) setTimeout(readNext, 0);
+          else {
+            showNotification(`✅ اكتمل إرسال ${file.name}`, 'success');
+            setTimeout(() => setProgress('send', -1, ''), 1500);
+          }
+        };
+        reader.onerror = () => showNotification(`❌ خطأ في قراءة ${file.name}`, 'error');
+        reader.readAsArrayBuffer(blob);
+      }
+      readNext();
+    }
 
-        socket = io();
+    function assembleAndDownload(name, entry) {
+      const blob = new Blob(entry.chunks, { type: entry.type });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href = url; a.download = name; a.style.display = 'none';
+      document.body.appendChild(a); a.click();
+      setTimeout(() => { URL.revokeObjectURL(url); document.body.removeChild(a); }, 1000);
+      showNotification(`📥 تم استلام ${name}`, 'success');
+      setTimeout(() => setProgress('recv', -1, ''), 1500);
+      notifyFileReceived(name, entry.size);
+    }
 
-        // تهيئة شاشة المصادقة عند الاتصال
-        socket.on('connect', () => {
-            console.log('[Socket] متصل بالخادم');
-            initAuthScreen();
-        });
+    function downloadFile(fileData, fileName) {
+      const blob = new Blob([fileData]);
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href = url; a.download = fileName; a.click();
+      URL.revokeObjectURL(url);
+    }
 
-        socket.on('user_online', ({ userId, username }) => {
-            updateContactStatus(userId, true, username);
-            showNotification(`${username} متصل الآن 🟢`, 'success');
-        });
+    // ─── شريط التقدم ─────────────────────────────────────────────
+    function setProgress(dir, pct, name) {
+      const wrap  = document.getElementById(dir === 'send' ? 'sendProgressWrap' : 'recvProgressWrap');
+      const bar   = document.getElementById(dir === 'send' ? 'sendProgressBar'  : 'recvProgressBar');
+      const label = document.getElementById(dir === 'send' ? 'sendProgressLabel': 'recvProgressLabel');
+      if (!wrap) return;
+      if (pct < 0) { wrap.classList.remove('show'); return; }
+      wrap.classList.add('show');
+      bar.style.width   = pct + '%';
+      label.textContent = pct < 100
+        ? `${dir === 'send' ? '📤 إرسال' : '📥 استقبال'} ${name} — ${pct}%`
+        : `✅ اكتمل ${name}`;
+    }
 
-        socket.on('user_offline', ({ userId, username }) => {
-            updateContactStatus(userId, false, username);
-            showNotification(`${username} قطع الاتصال ⚪`, 'error');
-        });
+    // ─── الإشعارات ───────────────────────────────────────────────
+    function showNotification(message, type = 'info') {
+      const container = document.getElementById('notificationsContainer');
+      const el = document.createElement('div');
+      el.className = `notification ${type}`;
+      el.textContent = message;
+      container.appendChild(el);
+      setTimeout(() => el.remove(), 4000);
+    }
 
-        socket.on('receive_file', ({ senderUsername, fileName, fileData }) => {
-            downloadFile(fileData, fileName);
-            showNotification(`استقبل من ${senderUsername}: ${fileName}`, 'success');
-        });
+    function requestNotificationPermission() {
+      if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+      }
+    }
 
-        socket.on('receive_pending_file', ({ fileName, fileData }) => {
-            downloadFile(fileData, fileName);
-            showNotification(`ملف معلق: ${fileName}`, 'success');
-        });
+    function notifyFileReceived(fileName, size) {
+      if (!('Notification' in window) || Notification.permission !== 'granted') return;
+      if (document.visibilityState === 'visible') return;
+      const sizeStr = size > 1048576 ? (size/1048576).toFixed(2)+' MB' : (size/1024).toFixed(1)+' KB';
+      new Notification('📥 AirRoom — ملف مستقبَل', {
+        body: `${fileName} (${sizeStr})`, icon: '/icon-192.png', tag: 'airroom-file'
+      });
+    }
 
-        socket.on('file_sent_success', ({ recipientDeviceId, fileName }) => {
-            showNotification(`تم إرسال ${fileName} بنجاح ✅`, 'success');
-        });
-
-        socket.on('file_queued', ({ recipientUserId, fileName }) => {
-            showNotification(`${fileName} في قائمة الانتظار 📋`, 'success');
-        });
-
-        socket.on('user_added_as_contact', ({ userId, username }) => {
-            showNotification(`${username} أضافك كجهة اتصال!`, 'success');
-            loadContacts();
-        });
-
-        // ─────────────────────────────────────────────────────────────
-        // إدارة الجهات
-        // ─────────────────────────────────────────────────────────────
-
-        function addContact() {
-            const username = document.getElementById('searchUsername').value.trim();
-            
-            if (!username) {
-                showNotification('أدخل اسم المستخدم أولاً', 'error');
-                return;
-            }
-
-            socket.emit('connect_to_user', { targetUsername: username }, (result) => {
-                if (result.success) {
-                    showNotification(`تم الاتصال مع ${username}! ✅`, 'success');
-                    document.getElementById('searchUsername').value = '';
-                    loadContacts();
-                } else {
-                    showNotification(result.error, 'error');
-                }
-            });
-        }
-
-        function loadContacts() {
-            socket.emit('get_contacts', (result) => {
-                if (result.success) {
-                    renderContacts(result.contacts);
-                }
-            });
-        }
-
-        function renderContacts(contacts) {
-            const list = document.getElementById('contactsList');
-            
-            if (contacts.length === 0) {
-                list.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">🔗 لا توجد جهات اتصال بعد</div>';
-                return;
-            }
-
-            list.innerHTML = contacts.map(contact => `
-                <div class="contact-item" onclick="selectContact('${contact.contactUserId}', '${contact.contactUsername}', this)">
-                    <div class="contact-avatar">${contact.contactUsername[0].toUpperCase()}</div>
-                    <div class="contact-details">
-                        <div class="contact-name">${contact.contactUsername}</div>
-                        <div class="contact-status ${contact.isOnline ? 'status-online' : 'status-offline'}">
-                            ${contact.isOnline ? 'متصل' : 'غير متصل'}
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function selectContact(userId, username, element) {
-            document.querySelectorAll('.contact-item').forEach(e => e.classList.remove('active'));
-            element.classList.add('active');
-            selectedContactId = userId;
-            selectedContactUsername = username;
-            document.getElementById('headerTitle').textContent = username;
-            document.getElementById('fileAreaContainer').style.display = 'flex';
-        }
-
-        function updateContactStatus(userId, isOnline, name) {
-            loadContacts();
-        }
-
-        // ─────────────────────────────────────────────────────────────
-        // الملفات
-        // ─────────────────────────────────────────────────────────────
-
-        function setupDropZone() {
-            const dropZone = document.getElementById('dropZone');
-            const fileInput = document.getElementById('fileInput');
-
-            if (!dropZone) return;
-
-            dropZone.addEventListener('click', () => fileInput.click());
-
-            dropZone.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                dropZone.classList.add('dragover');
-            });
-
-            dropZone.addEventListener('dragleave', () => {
-                dropZone.classList.remove('dragover');
-            });
-
-            dropZone.addEventListener('drop', (e) => {
-                e.preventDefault();
-                dropZone.classList.remove('dragover');
-                handleFiles(e.dataTransfer.files);
-            });
-
-            fileInput.addEventListener('change', (e) => {
-                handleFiles(e.target.files);
-            });
-        }
-
-        function handleFiles(files) {
-            if (!selectedContactId) {
-                showNotification('اختر جهة اتصال أولاً', 'error');
-                return;
-            }
-
-            for (let file of files) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    socket.emit('send_file', {
-                        recipientUserId: selectedContactId,
-                        fileName: file.name,
-                        fileSize: file.size,
-                        fileData: e.target.result
-                    });
-                    showNotification(`جاري إرسال ${file.name}...`, 'success');
-                };
-                reader.readAsArrayBuffer(file);
-            }
-        }
-
-        function downloadFile(fileData, fileName) {
-            const blob = new Blob([fileData]);
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = fileName;
-            a.click();
-            URL.revokeObjectURL(url);
-        }
-
-        // ─────────────────────────────────────────────────────────────
-        // الإشعارات
-        // ─────────────────────────────────────────────────────────────
-
-        function showNotification(message, type = 'info') {
-            const container = document.getElementById('notificationsContainer');
-            const notification = document.createElement('div');
-            notification.className = `notification ${type}`;
-            notification.textContent = message;
-            
-            container.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.remove();
-            }, 4000);
-        }
-
-        // ─────────────────────────────────────────────────────────────
-        // البدء
-        // ─────────────────────────────────────────────────────────────
-
-        window.addEventListener('load', () => {
-            const savedDeviceId = localStorage.getItem('deviceId');
-
-            if (savedDeviceId) {
-                // محاولة تسجيل الدخول التلقائي
-                document.getElementById('deviceIdInput').value = savedDeviceId;
-                loginUser();
-            }
-        });
-
-        document.getElementById('usernameInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') registerNewUser();
-        });
-
-        document.getElementById('deviceIdInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') loginUser();
-        });
-
-        document.getElementById('searchUsername').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') addContact();
-        });
-    </script>
+    // ─── إضافة send_chunk في الـ server ──────────────────────────
+    // (يُرسل من الواجهة، server يوجّهه للمستقبل)
+  </script>
 </body>
 </html>
