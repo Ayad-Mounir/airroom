@@ -1371,7 +1371,7 @@ if ('serviceWorker' in navigator) {
 // ── Share / QR ────────────────────────────
 let _qrGenerated = false;
 
-const APP_URL = 'https://airroom-production.up.railway.app';
+const APP_URL = location.origin;
 
 function openShare() {
   const modal = document.getElementById('shareModal');
