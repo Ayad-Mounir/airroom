@@ -5,24 +5,7 @@ const sqlite3  = require('sqlite3').verbose();
 const { v4: uuidv4 } = require('uuid');
 const path     = require('path');
 
-const webpush = require('web-push');
-
-// ── VAPID Keys (توليد تلقائي إذا لم توجد) ─────────────────────
-let VAPID_PUBLIC, VAPID_PRIVATE;
-if (process.env.VAPID_PUBLIC && process.env.VAPID_PRIVATE) {
-  VAPID_PUBLIC  = process.env.VAPID_PUBLIC;
-  VAPID_PRIVATE = process.env.VAPID_PRIVATE;
-} else {
-  const keys = webpush.generateVAPIDKeys();
-  VAPID_PUBLIC  = keys.publicKey;
-  VAPID_PRIVATE = keys.privateKey;
-  console.log('⚠️  VAPID Keys مؤقتة — أضفها كـ env variables:');
-  console.log('VAPID_PUBLIC=' + VAPID_PUBLIC);
-  console.log('VAPID_PRIVATE=' + VAPID_PRIVATE);
-}
-webpush.setVapidDetails('mailto:airroom@app.com', VAPID_PUBLIC, VAPID_PRIVATE);
-
-
+const app    = express();
 const server = http.createServer(app);
 
 const io = new Server(server, {
@@ -65,16 +48,7 @@ db.serialize(() => {
     UNIQUE(userId, contactUserId)
   )`);
 
-  db.run(`CREATE TABLE IF NOT EXISTS push_subscriptions (
-    id        TEXT PRIMARY KEY,
-    userId    TEXT NOT NULL,
-    endpoint  TEXT NOT NULL,
-    p256dh    TEXT NOT NULL,
-    auth      TEXT NOT NULL,
-    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(userId) REFERENCES users(id),
-    UNIQUE(userId, endpoint)
-  )`);
+  db.run(`CREATE TABLE IF NOT EXISTS pending_files (
     id              TEXT PRIMARY KEY,
     senderUserId    TEXT NOT NULL,
     senderUsername  TEXT NOT NULL,
@@ -158,36 +132,6 @@ async function updateContactOnlineStatus(userId, contactUserId, isOnline) {
   );
 }
 
-async function savePushSubscription(userId, endpoint, p256dh, auth) {
-  const id = uuidv4();
-  return dbRun(
-    `INSERT OR REPLACE INTO push_subscriptions (id, userId, endpoint, p256dh, auth)
-     VALUES (?, ?, ?, ?, ?)`,
-    [id, userId, endpoint, p256dh, auth]
-  );
-}
-async function getPushSubscriptions(userId) {
-  return dbAll(`SELECT * FROM push_subscriptions WHERE userId = ?`, [userId]);
-}
-async function deletePushSubscription(endpoint) {
-  return dbRun(`DELETE FROM push_subscriptions WHERE endpoint = ?`, [endpoint]);
-}
-async function sendPushToUser(userId, payload) {
-  const subs = await getPushSubscriptions(userId);
-  for (const sub of subs) {
-    try {
-      await webpush.sendNotification(
-        { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-        JSON.stringify(payload)
-      );
-    } catch (err) {
-      if (err.statusCode === 410 || err.statusCode === 404) {
-        await deletePushSubscription(sub.endpoint);
-      }
-    }
-  }
-}
-
 async function savePendingFile(senderUserId, senderUsername, recipientUserId, fileName, fileSize, fileData, mimeType) {
   const id = uuidv4();
   return dbRun(
@@ -217,28 +161,6 @@ async function markFileAsSent(fileId) {
 // ═══════════════════════════════════════════════════════════════
 
 app.use(express.static(path.join(__dirname, 'public')));
-
-app.use(express.json({ limit: '1mb' }));
-
-app.get('/api/vapid-public-key', (req, res) => {
-  res.json({ publicKey: VAPID_PUBLIC });
-});
-
-app.post('/api/push-subscribe', async (req, res) => {
-  const { userId, subscription } = req.body;
-  if (!userId || !subscription?.endpoint) return res.status(400).json({ error: 'بيانات ناقصة' });
-  try {
-    await savePushSubscription(
-      userId,
-      subscription.endpoint,
-      subscription.keys.p256dh,
-      subscription.keys.auth
-    );
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
 
 app.get('/api/check-username/:username', async (req, res) => {
   const username = req.params.username?.trim();
@@ -444,26 +366,11 @@ io.on('connection', (socket) => {
       });
       socket.emit('file_sent_success', { recipientUserId, fileName, timestamp: new Date() });
       console.log(`[file→live] ${socket.username} → ${fileName}`);
-      // إشعار Push حتى لو التطبيق مفتوح
-      sendPushToUser(recipientUserId, {
-        title: `📥 ملف من ${socket.username}`,
-        body: fileName,
-        tag: 'file-' + Date.now(),
-        requireInteraction: true
-      }).catch(() => {});
-    } else {
     } else {
       try {
         await savePendingFile(socket.userId, socket.username, recipientUserId, fileName, fileSize, fileData, mimeType);
         socket.emit('file_queued', { recipientUserId, fileName, status: 'pending', timestamp: new Date() });
         console.log(`[file→queue] ${fileName} saved for ${recipientUserId?.slice(0, 8)}`);
-        // إشعار Push للمستخدم الغائب
-        sendPushToUser(recipientUserId, {
-          title: `📋 ملف معلق من ${socket.username}`,
-          body: `${fileName} — سيظهر عند دخولك`,
-          tag: 'pending-' + Date.now(),
-          requireInteraction: true
-        }).catch(() => {});
       } catch (err) {
         socket.emit('file_error', { error: 'فشل حفظ الملف: ' + err.message });
       }
@@ -566,25 +473,6 @@ io.on('connection', (socket) => {
     }
   });
 });
-
-// ═══════════════════════════════════════════════════════════════
-//  Keep-Alive — يمنع النوم على Render المجاني
-// ═══════════════════════════════════════════════════════════════
-const SELF_URL = process.env.RENDER_EXTERNAL_URL || process.env.APP_URL || null;
-if (SELF_URL) {
-  const https = require('https');
-  const http2  = require('http');
-  setInterval(() => {
-    const url = new URL(SELF_URL + '/health');
-    const mod = url.protocol === 'https:' ? https : http2;
-    mod.get(url.toString(), r => {
-      console.log(`[keep-alive] ping → ${r.statusCode}`);
-    }).on('error', e => {
-      console.warn('[keep-alive] ping failed:', e.message);
-    });
-  }, 10 * 60 * 1000); // كل 10 دقائق
-  console.log(`✅ Keep-alive مفعّل → ${SELF_URL}`);
-}
 
 // ═══════════════════════════════════════════════════════════════
 const PORT = process.env.PORT || 8080;
