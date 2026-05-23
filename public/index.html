@@ -669,6 +669,116 @@
       to   { opacity:1; transform:translateX(0); }
     }
 
+    /* ════════════════════════════════════════
+       SHARE MODAL
+    ════════════════════════════════════════ */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 5000;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(8px);
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+      opacity: 0; pointer-events: none;
+      transition: opacity .3s;
+    }
+    .modal-overlay.show { opacity: 1; pointer-events: all; }
+
+    .share-modal {
+      background: var(--ink-2);
+      border: 1px solid var(--border-hi);
+      border-radius: var(--r-xl);
+      padding: 32px 28px;
+      max-width: 360px; width: 100%;
+      text-align: center;
+      box-shadow: 0 0 0 1px rgba(0,212,255,0.08),
+                  0 32px 80px rgba(0,0,0,0.6);
+      transform: translateY(20px);
+      transition: transform .3s cubic-bezier(.23,1,.32,1);
+      position: relative;
+    }
+    .modal-overlay.show .share-modal { transform: translateY(0); }
+
+    .share-modal-close {
+      position: absolute; top: 14px; left: 14px;
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--ink-3); border: 1px solid var(--border);
+      color: var(--text-muted); font-size: 14px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: background .2s;
+    }
+    .share-modal-close:hover { background: rgba(255,71,87,0.15); color: var(--red); }
+
+    .share-modal h3 {
+      font-size: 18px; font-weight: 800; color: var(--text);
+      margin-bottom: 4px; letter-spacing: .5px;
+    }
+    .share-modal p {
+      font-size: 12px; color: var(--text-muted); margin-bottom: 20px;
+    }
+
+    .qr-wrap {
+      background: #fff;
+      border-radius: var(--r-md);
+      padding: 16px;
+      display: inline-block;
+      margin-bottom: 18px;
+      box-shadow: 0 0 30px rgba(0,212,255,0.12);
+    }
+    #qrCanvas { display: block; }
+
+    .share-url-row {
+      display: flex; gap: 8px; align-items: center;
+      background: var(--ink-3);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      padding: 10px 12px;
+      margin-bottom: 16px;
+    }
+    .share-url-row span {
+      flex: 1; font-size: 12px; color: var(--text-muted);
+      font-family: var(--mono); white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis;
+      text-align: right;
+    }
+    .share-url-row button {
+      background: var(--accent); color: var(--ink);
+      border: none; border-radius: 6px; padding: 5px 12px;
+      font-size: 11px; font-weight: 700; font-family: var(--sans);
+      cursor: pointer; flex-shrink: 0;
+      transition: opacity .2s;
+    }
+    .share-url-row button:hover { opacity: .85; }
+
+    .share-btns {
+      display: flex; gap: 8px; justify-content: center;
+    }
+    .share-btn {
+      flex: 1; padding: 10px 8px;
+      border-radius: var(--r-sm);
+      border: 1px solid var(--border);
+      background: var(--ink-3);
+      color: var(--text); font-size: 12px; font-weight: 600;
+      font-family: var(--sans); cursor: pointer;
+      transition: background .2s, border-color .2s;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .share-btn:hover { background: var(--surface); border-color: var(--accent); }
+
+    .btn-share-trigger {
+      background: rgba(0,212,255,0.1);
+      border: 1px solid rgba(0,212,255,0.2);
+      color: var(--accent); padding: 5px 12px;
+      border-radius: 20px; cursor: pointer;
+      font-size: 11px; font-family: var(--sans);
+      font-weight: 700; letter-spacing: .5px;
+      transition: background .2s, border-color .2s;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .btn-share-trigger:hover {
+      background: rgba(0,212,255,0.18);
+      border-color: rgba(0,212,255,0.4);
+    }
+
     /* ── Offline banner ─────────────────────── */
     #reconnectBanner {
       position: fixed; top: 0; left: 0; right: 0; z-index: 8000;
@@ -761,7 +871,10 @@
           <div class="sidebar-logo-dot"></div>
           <h2>AIR<span>ROOM</span></h2>
         </div>
-        <button class="btn-logout" onclick="doLogout()">خروج</button>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="btn-share-trigger" onclick="openShare()">📡 شارك</button>
+          <button class="btn-logout" onclick="doLogout()">خروج</button>
+        </div>
       </div>
       <div class="user-pill">
         <div class="user-pill-avatar" id="avatarLetter">?</div>
@@ -856,6 +969,31 @@
 
 <input type="file" id="fileInput" multiple style="display:none">
 
+<!-- ═══════════════ SHARE MODAL ═══════════════ -->
+<div class="modal-overlay" id="shareModal" onclick="closeShareOnBg(event)">
+  <div class="share-modal">
+    <button class="share-modal-close" onclick="closeShare()">✕</button>
+    <h3>📡 شارك AirRoom</h3>
+    <p>امسح الكود أو أرسل الرابط لصديقك</p>
+    <div class="qr-wrap">
+      <canvas id="qrCanvas" width="180" height="180"></canvas>
+    </div>
+    <div class="share-url-row">
+      <span id="shareUrlText">…</span>
+      <button onclick="copyShareUrl()">نسخ</button>
+    </div>
+    <div class="share-btns">
+      <button class="share-btn" onclick="shareNative()">
+        <span>📤</span> مشاركة
+      </button>
+      <button class="share-btn" onclick="downloadQR()">
+        <span>💾</span> حفظ QR
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script>
 // ══════════════════════════════════════════
@@ -1228,6 +1366,85 @@ document.getElementById('inputLogin').addEventListener('keydown', e => { if(e.ke
 // ── Service Worker ───────────────────────
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(()=>{});
+}
+
+// ── Share / QR ────────────────────────────
+let _qrGenerated = false;
+
+const APP_URL = 'https://airroom-production.up.railway.app';
+
+function openShare() {
+  const modal = document.getElementById('shareModal');
+  document.getElementById('shareUrlText').textContent = APP_URL;
+  modal.classList.add('show');
+
+  if (!_qrGenerated) {
+    _qrGenerated = true;
+    generateQR(APP_URL);
+  }
+}
+
+function closeShare() {
+  document.getElementById('shareModal').classList.remove('show');
+}
+function closeShareOnBg(e) {
+  if (e.target === document.getElementById('shareModal')) closeShare();
+}
+
+function generateQR(url) {
+  const canvas = document.getElementById('qrCanvas');
+  const ctx    = canvas.getContext('2d');
+  const size   = 180;
+  canvas.width = canvas.height = size;
+
+  // QR via Google Charts API (no library needed)
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => { ctx.drawImage(img, 0, 0, size, size); };
+  img.onerror = () => {
+    // fallback: draw text if image fails
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, size, size);
+    ctx.fillStyle = '#0a0f1e';
+    ctx.font = '11px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(url, size/2, size/2);
+  };
+  img.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&bgcolor=ffffff&color=0a0f1e&data=${encodeURIComponent(url)}`;
+}
+
+function copyShareUrl() {
+  navigator.clipboard.writeText(APP_URL).then(() => {
+    toast('✅ تم نسخ الرابط', 'success');
+  }).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = APP_URL;
+    document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy');
+    ta.remove();
+    toast('✅ تم نسخ الرابط', 'success');
+  });
+}
+
+function shareNative() {
+  if (navigator.share) {
+    navigator.share({
+      title: 'AirRoom — مشاركة الملفات الفورية',
+      text: 'جرّب AirRoom لمشاركة الملفات فوراً وبدون حدود!',
+      url: APP_URL
+    }).catch(() => {});
+  } else {
+    copyShareUrl();
+  }
+}
+
+function downloadQR() {
+  const canvas = document.getElementById('qrCanvas');
+  const link   = document.createElement('a');
+  link.download = 'airroom-qr.png';
+  link.href     = canvas.toDataURL('image/png');
+  link.click();
+  toast('💾 تم حفظ QR Code', 'success');
 }
 
 // ── START ────────────────────────────────
