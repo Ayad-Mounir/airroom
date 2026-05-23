@@ -1217,17 +1217,6 @@ function authed(r) {
   document.getElementById('pillName').textContent  = r.username;
   document.getElementById('avatarLetter').textContent = r.username[0].toUpperCase();
   loadContacts(); setupDZ(); askNotif();
-  // تسجيل Push بعد الإذن
-  if (Notification.permission === 'granted') {
-    registerPush(r.userId);
-  } else {
-    Notification.requestPermission().then(p => {
-      if (p === 'granted') {
-        toast('🔔 ستصلك إشعارات حتى لو التطبيق مغلق', 'success');
-        registerPush(r.userId);
-      }
-    });
-  }
   toast(`مرحباً ${r.username} 👋`, 'success');
 }
 function reAuth() {
@@ -1403,39 +1392,6 @@ function dl(url, name) {
   const a = Object.assign(document.createElement('a'), {href:url, download:name, style:'display:none'});
   document.body.appendChild(a); a.click();
   setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1500);
-}
-
-// ── Push Notifications ────────────────────
-async function registerPush(userId) {
-  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
-  try {
-    const reg = await navigator.serviceWorker.ready;
-    // جلب VAPID key من السيرفر
-    const res  = await fetch('/api/vapid-public-key');
-    const { publicKey } = await res.json();
-    const appKey = urlBase64ToUint8Array(publicKey);
-    // اشتراك Push
-    let sub = await reg.pushManager.getSubscription();
-    if (!sub) {
-      sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: appKey });
-    }
-    // إرسال الاشتراك للسيرفر
-    await fetch('/api/push-subscribe', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, subscription: sub.toJSON() })
-    });
-    console.log('[push] registered ✅');
-  } catch (err) {
-    console.warn('[push] failed:', err.message);
-  }
-}
-
-function urlBase64ToUint8Array(base64String) {
-  const padding = '='.repeat((4 - base64String.length % 4) % 4);
-  const base64  = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-  const raw     = atob(base64);
-  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
 }
 
 // ── Notifications ────────────────────────
