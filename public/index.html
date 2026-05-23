@@ -3,1217 +3,1209 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#075e54">
+  <meta name="theme-color" content="#0a0f1e">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="AirRoom">
-  <title>AirRoom — مشاركة الملفات</title>
+  <title>AirRoom</title>
   <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 
   <style>
+    /* ════════════════════════════════════════
+       DESIGN SYSTEM — AirRoom Dark Futuristic
+    ════════════════════════════════════════ */
     :root {
-      --green:       #075e54;
-      --green-light: #128c7e;
-      --green-pale:  #e8f5e9;
-      --white:       #ffffff;
-      --bg:          #f0f0f0;
-      --border:      #e0e0e0;
-      --text:        #111111;
-      --text-muted:  #888888;
-      --red:         #f44336;
-      --blue:        #2196f3;
-      --radius:      10px;
-      --shadow:      0 4px 16px rgba(0,0,0,0.12);
+      --ink:       #0a0f1e;
+      --ink-2:     #111827;
+      --ink-3:     #1a2235;
+      --surface:   #1e2a3f;
+      --border:    rgba(99,130,196,0.15);
+      --border-hi: rgba(99,130,196,0.35);
+
+      --accent:    #00d4ff;
+      --accent-2:  #0099cc;
+      --accent-glow: rgba(0,212,255,0.18);
+      --green:     #00e676;
+      --green-dim: rgba(0,230,118,0.12);
+      --red:       #ff4757;
+      --amber:     #ffc107;
+
+      --text:      #e8edf5;
+      --text-muted:#7a8aa8;
+      --text-dim:  #4a5568;
+
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Cairo', sans-serif;
+
+      --r-sm: 8px;
+      --r-md: 14px;
+      --r-lg: 20px;
+      --r-xl: 28px;
+
+      --sidebar-w: 310px;
     }
 
-    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 
     html, body {
       height: 100%;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-      background: var(--bg);
+      font-family: var(--sans);
+      background: var(--ink);
       color: var(--text);
       overflow: hidden;
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* ══════════════════════════════════════════
-       شاشة المصادقة
-    ══════════════════════════════════════════ */
+    /* ── Scrollbar ──────────────────────────────── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 4px; }
+
+    /* ════════════════════════════════════════
+       AUTH SCREEN
+    ════════════════════════════════════════ */
     #authScreen {
-      position: fixed; inset: 0;
-      background: linear-gradient(160deg, var(--green) 0%, var(--green-light) 100%);
+      position: fixed; inset: 0; z-index: 200;
       display: flex; align-items: center; justify-content: center;
-      z-index: 100;
       padding: 20px;
+      background: var(--ink);
+      /* noise texture */
+      background-image:
+        radial-gradient(ellipse 80% 60% at 20% 10%, rgba(0,212,255,0.07) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 80% at 85% 85%, rgba(0,230,118,0.05) 0%, transparent 60%);
+    }
+
+    /* glowing orbs */
+    #authScreen::before, #authScreen::after {
+      content: '';
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      pointer-events: none;
+    }
+    #authScreen::before {
+      width: 400px; height: 400px;
+      background: rgba(0,212,255,0.06);
+      top: -100px; right: -50px;
+      animation: pulse 6s ease-in-out infinite;
+    }
+    #authScreen::after {
+      width: 300px; height: 300px;
+      background: rgba(0,230,118,0.05);
+      bottom: -80px; left: -60px;
+      animation: pulse 8s ease-in-out infinite reverse;
+    }
+
+    @keyframes pulse {
+      0%,100% { transform: scale(1); opacity: .6; }
+      50%      { transform: scale(1.15); opacity: 1; }
     }
 
     .auth-card {
-      background: var(--white);
-      border-radius: 16px;
-      padding: 36px 32px;
-      width: 100%; max-width: 400px;
-      box-shadow: var(--shadow);
-      animation: fadeUp .4s ease;
+      position: relative; z-index: 1;
+      width: 100%; max-width: 420px;
+      background: var(--ink-2);
+      border: 1px solid var(--border);
+      border-radius: var(--r-xl);
+      padding: 44px 40px;
+      box-shadow: 0 0 0 1px rgba(0,212,255,0.05),
+                  0 24px 60px rgba(0,0,0,0.5);
+      animation: slideUp .5s cubic-bezier(.23,1,.32,1) both;
     }
 
-    @keyframes fadeUp {
-      from { transform: translateY(24px); opacity: 0; }
-      to   { transform: translateY(0);    opacity: 1; }
+    @keyframes slideUp {
+      from { opacity:0; transform: translateY(32px); }
+      to   { opacity:1; transform: translateY(0); }
     }
 
-    .auth-logo {
+    .auth-brand {
       text-align: center;
-      margin-bottom: 24px;
+      margin-bottom: 36px;
     }
-    .auth-logo .logo-icon {
-      width: 72px; height: 72px; border-radius: 18px;
-      background: var(--green);
-      display: inline-flex; align-items: center; justify-content: center;
-      font-size: 36px; margin-bottom: 12px;
-      box-shadow: 0 4px 12px rgba(7,94,84,0.35);
+    .auth-brand .brand-icon {
+      width: 64px; height: 64px;
+      margin: 0 auto 16px;
+      position: relative;
+      display: flex; align-items: center; justify-content: center;
     }
-    .auth-logo h1 { font-size: 26px; color: var(--green); font-weight: 700; }
-    .auth-logo p  { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+    .brand-icon-ring {
+      position: absolute; inset: 0;
+      border: 2px solid var(--accent);
+      border-radius: 18px;
+      opacity: .5;
+      animation: spinRing 8s linear infinite;
+    }
+    .brand-icon-ring-2 {
+      position: absolute; inset: 6px;
+      border: 1px solid var(--accent);
+      border-radius: 12px;
+      opacity: .3;
+      animation: spinRing 5s linear infinite reverse;
+    }
+    @keyframes spinRing { to { transform: rotate(360deg); } }
+    .brand-icon-emoji { font-size: 28px; position: relative; z-index: 1; }
 
-    .form-group { margin-bottom: 18px; }
-    .form-group label {
-      display: block; font-size: 13px; font-weight: 600;
-      color: var(--text); margin-bottom: 6px;
+    .auth-brand h1 {
+      font-size: 28px; font-weight: 900; letter-spacing: 2px;
+      color: var(--text);
     }
-    .form-group input {
-      width: 100%; padding: 13px 14px;
-      border: 1.5px solid var(--border); border-radius: 8px;
-      font-size: 15px; font-family: inherit;
+    .auth-brand h1 span { color: var(--accent); }
+    .auth-brand p {
+      font-size: 13px; color: var(--text-muted); margin-top: 4px;
+      font-weight: 300; letter-spacing: .5px;
+    }
+
+    /* Form elements */
+    .field { margin-bottom: 20px; }
+    .field label {
+      display: block; font-size: 12px; font-weight: 700;
+      color: var(--text-muted); text-transform: uppercase;
+      letter-spacing: 1px; margin-bottom: 8px;
+    }
+    .field input {
+      width: 100%; padding: 13px 16px;
+      background: var(--ink-3);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      font-size: 15px; font-family: var(--sans);
+      color: var(--text);
       transition: border-color .2s, box-shadow .2s;
-      background: #fafafa;
-    }
-    .form-group input:focus {
       outline: none;
-      border-color: var(--green);
-      box-shadow: 0 0 0 3px rgba(7,94,84,0.12);
-      background: var(--white);
+    }
+    .field input::placeholder { color: var(--text-dim); }
+    .field input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
     }
 
-    .msg-error   { font-size: 12px; color: var(--red);   margin-top: 5px; min-height: 16px; }
-    .msg-success { font-size: 12px; color: #4caf50; margin-top: 5px; min-height: 16px; }
-
-    .btn {
-      width: 100%; padding: 13px;
-      background: var(--green); color: var(--white);
-      border: none; border-radius: 8px;
-      font-size: 15px; font-weight: 600;
-      cursor: pointer; transition: background .2s, opacity .2s;
-      margin-top: 6px;
+    .field-msg {
+      font-size: 12px; margin-top: 6px; min-height: 16px;
+      display: flex; align-items: center; gap: 4px;
     }
-    .btn:hover:not(:disabled) { background: #054d43; }
-    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    .field-msg.ok  { color: var(--green); }
+    .field-msg.err { color: var(--red);   }
 
-    .auth-switch {
-      text-align: center; margin-top: 20px;
+    .btn-primary {
+      width: 100%; padding: 14px;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+      color: var(--ink);
+      border: none; border-radius: var(--r-sm);
+      font-size: 15px; font-weight: 700; font-family: var(--sans);
+      cursor: pointer; transition: opacity .2s, transform .1s;
+      margin-top: 4px; letter-spacing: .5px;
+    }
+    .btn-primary:hover:not(:disabled) { opacity: .9; transform: translateY(-1px); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-primary:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+
+    .auth-note {
+      font-size: 11px; color: var(--text-dim);
+      text-align: center; margin: 12px 0 4px;
+      padding: 8px 12px;
+      background: rgba(255,193,7,0.06);
+      border: 1px solid rgba(255,193,7,0.15);
+      border-radius: var(--r-sm);
+    }
+
+    .auth-toggle {
+      text-align: center; margin-top: 22px;
       font-size: 13px; color: var(--text-muted);
     }
-    .auth-switch button {
+    .auth-toggle button {
       background: none; border: none;
-      color: var(--green); cursor: pointer;
-      font-size: 13px; font-weight: 600;
-      text-decoration: underline; margin-right: 4px;
+      color: var(--accent); cursor: pointer;
+      font-size: 13px; font-weight: 700;
+      font-family: var(--sans);
+      text-decoration: none;
+      padding: 2px 6px;
+      border-bottom: 1px solid transparent;
+      transition: border-color .2s;
     }
+    .auth-toggle button:hover { border-bottom-color: var(--accent); }
 
-    /* ══════════════════════════════════════════
-       التطبيق الرئيسي
-    ══════════════════════════════════════════ */
+    /* ════════════════════════════════════════
+       MAIN APP LAYOUT
+    ════════════════════════════════════════ */
     #mainApp {
-      display: none;
-      width: 100%; height: 100vh;
-      flex-direction: row;
+      display: none; width: 100%; height: 100vh;
     }
     #mainApp.show { display: flex; }
 
-    /* الشريط الجانبي */
+    /* ── SIDEBAR ─────────────────────────────── */
     .sidebar {
-      width: 320px; min-width: 260px;
-      background: var(--white);
+      width: var(--sidebar-w);
+      background: var(--ink-2);
       border-left: 1px solid var(--border);
       display: flex; flex-direction: column;
-      overflow: hidden;
+      overflow: hidden; flex-shrink: 0;
     }
 
-    .sidebar-header {
-      background: var(--green);
-      color: var(--white);
-      padding: 16px 18px 14px;
+    .sidebar-top {
+      padding: 20px 18px 16px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, var(--ink-2) 0%, rgba(26,34,53,0.8) 100%);
+    }
+    .sidebar-title-row {
+      display: flex; align-items: center;
+      justify-content: space-between; margin-bottom: 14px;
+    }
+    .sidebar-logo {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .sidebar-logo-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
+      animation: blink 2s ease-in-out infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+    .sidebar-logo h2 {
+      font-size: 17px; font-weight: 900;
+      letter-spacing: 1.5px; color: var(--text);
+    }
+    .sidebar-logo h2 span { color: var(--accent); }
+
+    .btn-logout {
+      background: rgba(255,71,87,0.1);
+      border: 1px solid rgba(255,71,87,0.2);
+      color: var(--red); padding: 5px 12px;
+      border-radius: 20px; cursor: pointer;
+      font-size: 11px; font-family: var(--sans);
+      font-weight: 700; letter-spacing: .5px;
+      transition: background .2s, border-color .2s;
+    }
+    .btn-logout:hover {
+      background: rgba(255,71,87,0.18);
+      border-color: rgba(255,71,87,0.4);
+    }
+
+    .user-pill {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--ink-3);
+      border: 1px solid var(--border);
+      border-radius: 24px; padding: 7px 14px;
+    }
+    .user-pill-avatar {
+      width: 24px; height: 24px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; color: var(--ink);
       flex-shrink: 0;
     }
-    .sidebar-header-top {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 10px;
+    .user-pill-name {
+      font-size: 13px; font-weight: 600; color: var(--text);
+      font-family: var(--mono); letter-spacing: .3px;
     }
-    .sidebar-header h2 { font-size: 19px; font-weight: 700; }
-    .sidebar-header .user-tag {
-      display: flex; align-items: center; gap: 8px;
-      background: rgba(255,255,255,0.15);
-      border-radius: 20px; padding: 5px 12px;
-      font-size: 13px;
+    .user-pill-status {
+      margin-right: auto; font-size: 10px; color: var(--green);
+      font-weight: 600;
     }
-    .btn-logout {
-      background: rgba(255,255,255,0.18); border: none;
-      color: var(--white); padding: 6px 12px; border-radius: 6px;
-      cursor: pointer; font-size: 12px; transition: background .2s;
-    }
-    .btn-logout:hover { background: rgba(255,255,255,0.3); }
 
-    /* حقل إضافة جهة اتصال */
-    .add-contact-bar {
+    /* Search/Add bar */
+    .add-bar {
       padding: 12px 14px;
       border-bottom: 1px solid var(--border);
+    }
+    .add-bar-inner {
+      display: flex; gap: 8px; align-items: center;
+    }
+    .add-bar input {
+      flex: 1; padding: 9px 13px;
+      background: var(--ink-3);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 13px; font-family: var(--sans);
+      color: var(--text); outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .add-bar input::placeholder { color: var(--text-dim); }
+    .add-bar input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent-glow);
+    }
+    .add-bar button {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--accent); color: var(--ink);
+      border: none; cursor: pointer;
+      font-size: 16px; line-height: 1;
+      display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
+      transition: transform .15s, opacity .15s;
+      font-weight: 700;
     }
-    .add-contact-bar form {
-      display: flex; gap: 8px;
-    }
-    .add-contact-bar input {
-      flex: 1; padding: 9px 12px;
-      border: 1.5px solid var(--border); border-radius: 7px;
-      font-size: 13px; font-family: inherit;
-      transition: border-color .2s;
-    }
-    .add-contact-bar input:focus {
-      outline: none; border-color: var(--green);
-    }
-    .add-contact-bar button {
-      padding: 9px 16px;
-      background: var(--green); color: var(--white);
-      border: none; border-radius: 7px;
-      font-size: 13px; cursor: pointer; font-weight: 600;
-      white-space: nowrap; transition: background .2s;
-    }
-    .add-contact-bar button:hover { background: #054d43; }
+    .add-bar button:hover { transform: scale(1.1); }
 
-    /* قائمة الجهات */
-    .contacts-list { flex: 1; overflow-y: auto; }
+    /* Contacts */
+    .contacts-list { flex: 1; overflow-y: auto; padding: 8px 0; }
+
     .contacts-empty {
-      padding: 40px 20px; text-align: center;
-      color: var(--text-muted); font-size: 14px;
+      padding: 50px 20px; text-align: center;
+      color: var(--text-dim);
     }
-    .contacts-empty .empty-icon { font-size: 40px; margin-bottom: 12px; }
+    .contacts-empty .ce-icon {
+      font-size: 44px; margin-bottom: 12px; opacity: .5;
+    }
+    .contacts-empty p { font-size: 13px; line-height: 1.7; }
 
     .contact-item {
       display: flex; align-items: center; gap: 12px;
-      padding: 13px 16px;
-      cursor: pointer; transition: background .15s;
-      border-bottom: 1px solid #f5f5f5;
+      padding: 12px 16px; cursor: pointer;
+      transition: background .15s;
       position: relative;
     }
-    .contact-item:hover    { background: #f9f9f9; }
-    .contact-item.active   {
-      background: var(--green-pale);
-      border-right: 3px solid var(--green);
+    .contact-item::after {
+      content: '';
+      position: absolute; left: 0; top: 50%;
+      transform: translateY(-50%) scaleY(0);
+      width: 3px; height: 60%;
+      background: var(--accent);
+      border-radius: 0 4px 4px 0;
+      transition: transform .2s;
     }
+    .contact-item:hover { background: rgba(255,255,255,0.03); }
+    .contact-item.active {
+      background: rgba(0,212,255,0.06);
+    }
+    .contact-item.active::after { transform: translateY(-50%) scaleY(1); }
 
-    .contact-avatar {
-      width: 46px; height: 46px; border-radius: 50%;
-      background: var(--green);
-      color: var(--white);
+    .c-avatar {
+      width: 44px; height: 44px; border-radius: 14px;
+      background: linear-gradient(135deg, var(--surface), var(--ink-3));
+      border: 1px solid var(--border);
       display: flex; align-items: center; justify-content: center;
-      font-weight: 700; font-size: 20px;
-      flex-shrink: 0;
+      font-size: 18px; font-weight: 700;
+      color: var(--accent); flex-shrink: 0;
+      position: relative;
     }
-    .contact-info { flex: 1; min-width: 0; }
-    .contact-name { font-weight: 600; font-size: 14px; color: var(--text); }
-    .contact-status {
-      font-size: 12px; margin-top: 2px;
-      display: flex; align-items: center; gap: 4px;
+    .c-avatar-online::after {
+      content: '';
+      position: absolute; bottom: -2px; left: -2px;
+      width: 12px; height: 12px; border-radius: 50%;
+      background: var(--green);
+      border: 2px solid var(--ink-2);
+      box-shadow: 0 0 6px var(--green);
     }
-    .dot-online  { color: #4caf50; }
-    .dot-offline { color: var(--text-muted); }
 
-    /* المنطقة الرئيسية */
+    .c-info { flex: 1; min-width: 0; }
+    .c-name {
+      font-size: 14px; font-weight: 600; color: var(--text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .c-status {
+      font-size: 11px; margin-top: 2px;
+      color: var(--text-muted);
+    }
+    .c-status.online { color: var(--green); }
+
+    /* ── MAIN AREA ──────────────────────────── */
     .main-area {
       flex: 1; display: flex; flex-direction: column;
-      background: #ece5dd; /* خلفية واتساب */
-      overflow: hidden;
-      min-width: 0;
+      background: var(--ink);
+      background-image:
+        radial-gradient(ellipse 50% 40% at 70% 20%, rgba(0,212,255,0.03) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 50% at 20% 80%, rgba(0,230,118,0.02) 0%, transparent 60%);
+      overflow: hidden; min-width: 0;
     }
 
-    .main-header {
-      background: var(--green);
-      color: var(--white);
-      padding: 0 20px;
-      height: 58px;
-      display: flex; align-items: center; gap: 12px;
-      flex-shrink: 0;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.15);
-    }
-    .main-header h3 { font-size: 17px; font-weight: 600; }
-    .main-header .partner-status { font-size: 12px; opacity: 0.85; }
-
-    /* شاشة الترحيب */
-    .welcome-screen {
+    /* Welcome */
+    .welcome-pane {
       flex: 1; display: flex; flex-direction: column;
       align-items: center; justify-content: center;
-      gap: 16px; text-align: center; padding: 40px 20px;
-      background: #f8f8f8;
+      gap: 16px; text-align: center; padding: 40px;
     }
-    .welcome-screen .big-icon { font-size: 64px; }
-    .welcome-screen h2 { color: var(--green); font-size: 22px; }
-    .welcome-screen p  { color: var(--text-muted); font-size: 14px; max-width: 340px; }
+    .welcome-ring {
+      width: 100px; height: 100px; position: relative;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .welcome-ring-anim {
+      position: absolute; inset: 0;
+      border: 2px solid transparent;
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 3s linear infinite;
+      opacity: .4;
+    }
+    .welcome-ring-anim-2 {
+      position: absolute; inset: 12px;
+      border: 1px solid transparent;
+      border-bottom-color: var(--green);
+      border-radius: 50%;
+      animation: spin 5s linear infinite reverse;
+      opacity: .3;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .welcome-ring-icon { font-size: 38px; }
+    .welcome-pane h2 { font-size: 22px; font-weight: 700; color: var(--text); }
+    .welcome-pane p  { font-size: 14px; color: var(--text-muted); max-width: 320px; line-height: 1.6; }
 
-    /* منطقة الإرسال */
-    .chat-area {
+    /* Chat area */
+    .chat-pane {
       display: none; flex: 1; flex-direction: column; overflow: hidden;
     }
-    .chat-area.show { display: flex; }
+    .chat-pane.show { display: flex; }
 
-    /* منطقة الرسائل (سجل النقل) */
-    .messages-area {
+    /* Chat header */
+    .chat-header {
+      padding: 0 20px;
+      height: 62px; flex-shrink: 0;
+      display: flex; align-items: center; gap: 14px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(10,15,30,0.8);
+      backdrop-filter: blur(12px);
+    }
+    .back-btn {
+      display: none; width: 32px; height: 32px;
+      background: var(--ink-3); border: 1px solid var(--border);
+      border-radius: 50%; color: var(--text);
+      font-size: 15px; cursor: pointer;
+      align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .chat-header-avatar {
+      width: 40px; height: 40px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--surface), var(--ink-3));
+      border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px; font-weight: 700; color: var(--accent);
+      flex-shrink: 0;
+    }
+    .chat-header-info { flex: 1; min-width: 0; }
+    .chat-header-name {
+      font-size: 15px; font-weight: 700; color: var(--text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .chat-header-status { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+    .chat-header-status.online { color: var(--green); }
+
+    /* Messages */
+    .messages-pane {
       flex: 1; overflow-y: auto;
-      padding: 16px 20px;
-      display: flex; flex-direction: column; gap: 8px;
+      padding: 20px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+
+    .msg {
+      display: flex; align-items: flex-end; gap: 8px;
+      animation: msgIn .25s cubic-bezier(.23,1,.32,1);
+    }
+    .msg.sent { flex-direction: row-reverse; }
+
+    @keyframes msgIn {
+      from { opacity:0; transform: translateY(8px); }
+      to   { opacity:1; transform: translateY(0); }
     }
 
     .msg-bubble {
-      max-width: 70%; padding: 10px 14px;
-      border-radius: 10px; font-size: 13px;
-      position: relative; word-break: break-word;
+      max-width: 65%;
+      padding: 12px 14px;
+      border-radius: 16px;
+      font-size: 13px; line-height: 1.5;
+      position: relative;
     }
-    .msg-bubble.sent {
-      background: #dcf8c6; align-self: flex-start;
-      border-bottom-right-radius: 2px;
+    .msg.sent .msg-bubble {
+      background: linear-gradient(135deg, rgba(0,212,255,0.15), rgba(0,153,204,0.12));
+      border: 1px solid rgba(0,212,255,0.2);
+      border-bottom-right-radius: 4px;
     }
-    .msg-bubble.received {
-      background: var(--white); align-self: flex-end;
-      border-bottom-left-radius: 2px;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+    .msg.received .msg-bubble {
+      background: var(--ink-3);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 4px;
     }
-    .msg-bubble .file-name { font-weight: 600; margin-bottom: 2px; }
-    .msg-bubble .file-meta { font-size: 11px; color: var(--text-muted); }
-    .msg-bubble .msg-time  { font-size: 10px; color: var(--text-muted); text-align: left; margin-top: 4px; }
-    .msg-bubble .file-icon { font-size: 24px; margin-bottom: 4px; }
 
-    /* شريط التقدم */
-    .progress-area {
-      padding: 0 16px 10px;
+    .msg-file-icon { font-size: 28px; margin-bottom: 6px; }
+    .msg-file-name { font-weight: 600; color: var(--text); font-size: 13px; }
+    .msg-file-meta { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+    .msg-time {
+      font-size: 10px; color: var(--text-dim); margin-top: 6px;
+      font-family: var(--mono);
+      display: flex; align-items: center; gap: 4px;
+    }
+    .msg.sent .msg-time { justify-content: flex-end; }
+    .msg-check { color: var(--accent); }
+
+    .msg-pending-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 10px; color: var(--amber);
+      background: rgba(255,193,7,0.1);
+      border: 1px solid rgba(255,193,7,0.2);
+      border-radius: 20px; padding: 2px 8px; margin-top: 4px;
+    }
+
+    /* Progress bars */
+    .progress-zone {
+      padding: 0 20px 8px;
       flex-shrink: 0;
+      display: flex; flex-direction: column; gap: 6px;
     }
-    .progress-wrap { display: none; margin-bottom: 8px; }
-    .progress-wrap.show { display: block; }
-    .progress-label { font-size: 12px; color: #555; margin-bottom: 4px; }
-    .progress-bg {
-      background: #e0e0e0; border-radius: 10px;
-      height: 6px; overflow: hidden;
+    .prog-wrap { display: none; }
+    .prog-wrap.show { display: block; }
+    .prog-label {
+      font-size: 11px; color: var(--text-muted); margin-bottom: 4px;
+      display: flex; justify-content: space-between;
     }
-    .progress-fill {
-      height: 100%; background: var(--green);
-      border-radius: 10px; width: 0%;
-      transition: width .25s linear;
+    .prog-label span { color: var(--accent); font-family: var(--mono); }
+    .prog-track {
+      height: 3px; background: var(--ink-3);
+      border-radius: 4px; overflow: hidden;
+    }
+    .prog-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--green));
+      border-radius: 4px; width: 0%;
+      transition: width .2s linear;
     }
 
-    /* منطقة الإرسال السفلية */
-    .send-bar {
-      padding: 10px 14px;
-      background: #f0f0f0;
+    /* Send area */
+    .send-zone {
+      padding: 14px 16px;
       border-top: 1px solid var(--border);
+      background: rgba(10,15,30,0.6);
+      backdrop-filter: blur(12px);
       flex-shrink: 0;
     }
+
+    .offline-pill {
+      display: none;
+      align-items: center; gap: 8px;
+      background: rgba(255,193,7,0.08);
+      border: 1px solid rgba(255,193,7,0.2);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 12px; color: var(--amber);
+      margin-bottom: 10px;
+    }
+    .offline-pill.show { display: flex; }
 
     .drop-zone {
-      border: 2.5px dashed #ccc;
-      border-radius: var(--radius);
-      padding: 32px 20px;
+      border: 2px dashed var(--border);
+      border-radius: var(--r-md);
+      padding: 28px 20px;
       text-align: center;
       cursor: pointer;
       transition: all .25s;
-      color: var(--text-muted);
-      background: var(--white);
+      background: rgba(255,255,255,0.01);
     }
-    .drop-zone:hover, .drop-zone.dragover {
-      border-color: var(--green);
-      background: var(--green-pale);
-      color: var(--green);
+    .drop-zone:hover, .drop-zone.over {
+      border-color: var(--accent);
+      background: var(--accent-glow);
     }
-    .drop-zone .dz-icon { font-size: 38px; margin-bottom: 8px; }
-    .drop-zone h3 { font-size: 15px; }
-    .drop-zone p  { font-size: 12px; margin-top: 4px; opacity: .7; }
-
-    .btn-offline-warn {
-      background: #fff3cd; border: 1px solid #ffc107;
-      border-radius: 8px; padding: 10px 14px;
-      font-size: 13px; color: #856404;
-      text-align: center; margin-bottom: 10px;
-      display: none;
+    .dz-icon { font-size: 32px; margin-bottom: 8px; }
+    .dz-title {
+      font-size: 14px; font-weight: 700; color: var(--text);
     }
-    .btn-offline-warn.show { display: block; }
-
-    /* ══════════════════════════════════════════
-       Toast Notifications
-    ══════════════════════════════════════════ */
-    #toastContainer {
-      position: fixed; bottom: 24px; left: 20px;
-      z-index: 9999; display: flex; flex-direction: column-reverse; gap: 8px;
-      max-width: 360px; pointer-events: none;
+    .dz-sub {
+      font-size: 12px; color: var(--text-muted); margin-top: 4px;
+    }
+    .dz-formats {
+      display: flex; gap: 6px; justify-content: center; margin-top: 10px;
+      flex-wrap: wrap;
+    }
+    .dz-tag {
+      font-size: 10px; color: var(--text-dim);
+      border: 1px solid var(--border);
+      border-radius: 20px; padding: 2px 8px;
+      font-family: var(--mono);
     }
 
+    /* ════════════════════════════════════════
+       TOAST SYSTEM
+    ════════════════════════════════════════ */
+    #toastRoot {
+      position: fixed; bottom: 28px; left: 20px; z-index: 9999;
+      display: flex; flex-direction: column-reverse; gap: 8px;
+      max-width: 340px; pointer-events: none;
+    }
     .toast {
-      background: #333; color: var(--white);
-      padding: 12px 16px; border-radius: 9px;
-      font-size: 14px; line-height: 1.4;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.25);
-      animation: toastIn .3s ease;
+      display: flex; align-items: flex-start; gap: 10px;
+      background: var(--ink-2);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      padding: 12px 16px;
+      font-size: 13px; color: var(--text); line-height: 1.4;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      animation: toastIn .3s cubic-bezier(.23,1,.32,1);
       pointer-events: auto;
-      display: flex; align-items: flex-start; gap: 8px;
-      border-right: 4px solid #555;
     }
-    .toast.success { border-right-color: #4caf50; }
-    .toast.error   { border-right-color: var(--red); }
-    .toast.info    { border-right-color: var(--blue); }
-
+    .toast::before {
+      content: ''; width: 3px; min-height: 20px;
+      border-radius: 4px; flex-shrink: 0; margin-top: 1px;
+    }
+    .toast.success::before { background: var(--green); }
+    .toast.error::before   { background: var(--red); }
+    .toast.info::before    { background: var(--accent); }
+    .toast.warn::before    { background: var(--amber); }
     @keyframes toastIn {
-      from { transform: translateY(20px); opacity: 0; }
-      to   { transform: translateY(0);    opacity: 1; }
-    }
-    @keyframes toastOut {
-      to { transform: translateY(20px); opacity: 0; }
+      from { opacity:0; transform:translateX(-16px); }
+      to   { opacity:1; transform:translateX(0); }
     }
 
-    /* اتصال مفقود */
-    #offlineBanner {
+    /* ── Offline banner ─────────────────────── */
+    #reconnectBanner {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 8000;
+      background: rgba(255,71,87,0.9);
+      backdrop-filter: blur(8px);
+      color: white; text-align: center; padding: 10px;
+      font-size: 13px; font-weight: 600; letter-spacing: .3px;
       display: none;
-      position: fixed; top: 0; left: 0; right: 0;
-      background: #e53935; color: white;
-      text-align: center; padding: 8px;
-      font-size: 13px; z-index: 9990;
+      border-bottom: 1px solid rgba(255,71,87,0.5);
     }
-    #offlineBanner.show { display: block; }
+    #reconnectBanner.show { display: block; }
 
-    /* ══════════════════════════════════════════
-       Mobile Responsive
-    ══════════════════════════════════════════ */
-    @media (max-width: 700px) {
-      .sidebar { width: 100%; position: absolute; top: 0; bottom: 0; z-index: 10; }
+    /* ════════════════════════════════════════
+       MOBILE
+    ════════════════════════════════════════ */
+    @media (max-width: 680px) {
+      :root { --sidebar-w: 100%; }
+      .sidebar { position: absolute; inset: 0; z-index: 20; }
       .sidebar.hidden { display: none; }
       .main-area { position: absolute; inset: 0; }
       .main-area.hidden { display: none; }
-      #mainApp.show { position: relative; }
       .back-btn { display: flex !important; }
-    }
-
-    .back-btn {
-      display: none;
-      align-items: center; justify-content: center;
-      width: 36px; height: 36px;
-      border: none; background: rgba(255,255,255,0.18);
-      border-radius: 50%; cursor: pointer;
-      color: white; font-size: 18px;
+      .auth-card { padding: 32px 24px; }
     }
   </style>
 </head>
 <body>
 
-<!-- شعار الاتصال المفقود -->
-<div id="offlineBanner">⚠️ انقطع الاتصال بالخادم — جاري إعادة الاتصال…</div>
+<div id="reconnectBanner">⚡ انقطع الاتصال — جاري إعادة الاتصال…</div>
+<div id="toastRoot"></div>
 
-<!-- Toast notifications -->
-<div id="toastContainer"></div>
-
-<!-- ══════════════ شاشة المصادقة ══════════════ -->
+<!-- ═══════════════ AUTH SCREEN ═══════════════ -->
 <div id="authScreen">
   <div class="auth-card">
-    <div class="auth-logo">
-      <div class="logo-icon">🌐</div>
-      <h1>AirRoom</h1>
-      <p>مشاركة الملفات بين الأجهزة بسهولة</p>
+    <div class="auth-brand">
+      <div class="brand-icon">
+        <div class="brand-icon-ring"></div>
+        <div class="brand-icon-ring-2"></div>
+        <span class="brand-icon-emoji">📡</span>
+      </div>
+      <h1>AIR<span>ROOM</span></h1>
+      <p>مشاركة الملفات الفورية · بدون حدود</p>
     </div>
 
-    <!-- تسجيل أول مرة -->
-    <div id="screenRegister">
-      <div class="form-group">
-        <label for="inputNewUsername">اسم المستخدم</label>
-        <input type="text" id="inputNewUsername"
-               placeholder="مثال: أحمد_123"
-               maxlength="30" autocomplete="username" autocorrect="off"
-               autocapitalize="none" spellcheck="false">
-        <div id="errorRegister" class="msg-error"></div>
-        <div id="successRegister" class="msg-success"></div>
+    <!-- تسجيل جديد -->
+    <div id="paneRegister">
+      <div class="field">
+        <label>اسم المستخدم</label>
+        <input type="text" id="inputReg" placeholder="مثال: ahmed_99"
+               maxlength="30" autocomplete="username"
+               autocorrect="off" autocapitalize="none" spellcheck="false">
+        <div class="field-msg" id="msgReg"></div>
       </div>
-      <p style="font-size:11px;color:#999;text-align:center;margin-bottom:12px">
-        ⚠️ لا يمكن تغيير الاسم لاحقاً
-      </p>
-      <button class="btn" id="btnRegister" onclick="doRegister()" disabled>
-        إنشاء حساب جديد
+      <div class="auth-note">⚠️ لا يمكن تغيير هذا الاسم لاحقاً — اختره بعناية</div>
+      <button class="btn-primary" id="btnReg" onclick="doRegister()" disabled>
+        إنشاء الحساب
       </button>
-      <div class="auth-switch">
-        لديك حساب؟
-        <button onclick="showLoginScreen()">تسجيل الدخول</button>
+      <div class="auth-toggle">
+        لديك حساب؟ <button onclick="showLogin()">تسجيل الدخول</button>
       </div>
     </div>
 
     <!-- تسجيل دخول -->
-    <div id="screenLogin" style="display:none">
-      <div class="form-group">
-        <label for="inputLoginUsername">اسم المستخدم</label>
-        <input type="text" id="inputLoginUsername"
-               placeholder="أدخل اسمك"
+    <div id="paneLogin" style="display:none">
+      <div class="field">
+        <label>اسم المستخدم</label>
+        <input type="text" id="inputLogin" placeholder="أدخل اسمك"
                autocomplete="username" autocorrect="off"
                autocapitalize="none" spellcheck="false">
-        <div id="errorLogin" class="msg-error"></div>
+        <div class="field-msg err" id="msgLogin"></div>
       </div>
-      <button class="btn" id="btnLogin" onclick="doLogin()">تسجيل الدخول</button>
-      <div class="auth-switch">
-        أول مرة؟
-        <button onclick="showRegisterScreen()">إنشاء حساب جديد</button>
+      <button class="btn-primary" id="btnLogin" onclick="doLogin()">
+        دخول ←
+      </button>
+      <div class="auth-toggle">
+        أول مرة؟ <button onclick="showRegister()">إنشاء حساب</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ══════════════ التطبيق الرئيسي ══════════════ -->
-<div id="mainApp" class="main-app">
+<!-- ═══════════════ MAIN APP ═══════════════ -->
+<div id="mainApp">
 
-  <!-- الشريط الجانبي -->
+  <!-- SIDEBAR -->
   <div class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-      <div class="sidebar-header-top">
-        <h2>🌐 AirRoom</h2>
-        <button class="btn-logout" onclick="doLogout()">خروج 🚪</button>
+    <div class="sidebar-top">
+      <div class="sidebar-title-row">
+        <div class="sidebar-logo">
+          <div class="sidebar-logo-dot"></div>
+          <h2>AIR<span>ROOM</span></h2>
+        </div>
+        <button class="btn-logout" onclick="doLogout()">خروج</button>
       </div>
-      <div class="user-tag">
-        <span>👤</span>
-        <span id="lblUsername">…</span>
-        <span id="lblOnlineStatus" style="font-size:10px;opacity:.8"></span>
+      <div class="user-pill">
+        <div class="user-pill-avatar" id="avatarLetter">?</div>
+        <div class="user-pill-name" id="pillName">…</div>
+        <div class="user-pill-status">● Online</div>
       </div>
     </div>
 
-    <div class="add-contact-bar">
-      <form onsubmit="doAddContact(event)">
-        <input type="text" id="inputAddContact"
-               placeholder="ابحث باسم المستخدم…"
+    <div class="add-bar">
+      <div class="add-bar-inner">
+        <input type="text" id="inputAdd" placeholder="🔍 ابحث بالاسم وأضف…"
                autocorrect="off" autocapitalize="none" spellcheck="false">
-        <button type="submit">ربط ➕</button>
-      </form>
+        <button onclick="doAddContact()">+</button>
+      </div>
     </div>
 
     <div class="contacts-list" id="contactsList">
       <div class="contacts-empty">
-        <div class="empty-icon">👥</div>
-        <p>لا توجد جهات اتصال بعد<br>ابحث عن صديق وابدأ المشاركة</p>
+        <div class="ce-icon">👥</div>
+        <p>لا يوجد جهات اتصال بعد<br>ابحث عن صديق وابدأ</p>
       </div>
     </div>
   </div>
 
-  <!-- المنطقة الرئيسية -->
+  <!-- MAIN AREA -->
   <div class="main-area" id="mainArea">
 
-    <!-- شاشة الترحيب -->
-    <div class="welcome-screen" id="welcomeScreen">
-      <div class="big-icon">📡</div>
-      <h2>مرحباً في AirRoom</h2>
-      <p>اختر جهة اتصال من القائمة<br>أو أضف صديقاً جديداً لتبدأ مشاركة الملفات</p>
+    <!-- Welcome -->
+    <div class="welcome-pane" id="welcomePane">
+      <div class="welcome-ring">
+        <div class="welcome-ring-anim"></div>
+        <div class="welcome-ring-anim-2"></div>
+        <span class="welcome-ring-icon">📡</span>
+      </div>
+      <h2>AirRoom جاهز</h2>
+      <p>اختر جهة اتصال من القائمة لبدء إرسال الملفات فوراً<br>أو أضف صديقاً جديداً باسم المستخدم</p>
     </div>
 
-    <!-- منطقة الشات والإرسال -->
-    <div class="chat-area" id="chatArea">
-      <div class="main-header">
+    <!-- Chat pane -->
+    <div class="chat-pane" id="chatPane">
+
+      <div class="chat-header">
         <button class="back-btn" id="backBtn" onclick="goBack()">←</button>
-        <div>
-          <div class="main-header-title" id="headerName">…</div>
-          <div class="partner-status" id="headerStatus"></div>
+        <div class="chat-header-avatar" id="hdrAvatar">?</div>
+        <div class="chat-header-info">
+          <div class="chat-header-name" id="hdrName">…</div>
+          <div class="chat-header-status" id="hdrStatus">…</div>
         </div>
       </div>
 
-      <!-- سجل النقل -->
-      <div class="messages-area" id="messagesArea">
-        <!-- تظهر هنا الملفات المُرسلة والمستقبلة -->
+      <div class="messages-pane" id="msgsPane"></div>
+
+      <div class="progress-zone">
+        <div class="prog-wrap" id="pSendWrap">
+          <div class="prog-label">
+            <span id="pSendTxt">📤 إرسال…</span>
+            <span id="pSendPct">0%</span>
+          </div>
+          <div class="prog-track"><div class="prog-fill" id="pSendFill"></div></div>
+        </div>
+        <div class="prog-wrap" id="pRecvWrap">
+          <div class="prog-label">
+            <span id="pRecvTxt">📥 استقبال…</span>
+            <span id="pRecvPct">0%</span>
+          </div>
+          <div class="prog-track"><div class="prog-fill" id="pRecvFill"></div></div>
+        </div>
       </div>
 
-      <!-- أشرطة التقدم -->
-      <div class="progress-area">
-        <div class="progress-wrap" id="sendProgressWrap">
-          <div class="progress-label" id="sendProgressLabel">📤 إرسال…</div>
-          <div class="progress-bg"><div class="progress-fill" id="sendProgressFill"></div></div>
-        </div>
-        <div class="progress-wrap" id="recvProgressWrap">
-          <div class="progress-label" id="recvProgressLabel">📥 استقبال…</div>
-          <div class="progress-bg"><div class="progress-fill" id="recvProgressFill"></div></div>
-        </div>
-      </div>
-
-      <!-- شريط الإرسال -->
-      <div class="send-bar">
-        <div class="btn-offline-warn" id="offlineWarn">
-          📋 الطرف الآخر غير متصل — سيُرسل الملف تلقائياً عند اتصاله
+      <div class="send-zone">
+        <div class="offline-pill" id="offlinePill">
+          <span>⚠️</span>
+          <span>الطرف الآخر غير متصل — الملف سيُرسل تلقائياً عند عودته</span>
         </div>
         <div class="drop-zone" id="dropZone">
-          <div class="dz-icon">📁</div>
-          <h3>اسحب الملفات هنا</h3>
-          <p>أو اضغط لاختيار ملف من جهازك</p>
+          <div class="dz-icon">📂</div>
+          <div class="dz-title">اسحب الملف هنا أو اضغط للاختيار</div>
+          <div class="dz-sub">يدعم جميع أنواع الملفات · بدون حد للحجم</div>
+          <div class="dz-formats">
+            <span class="dz-tag">PDF</span>
+            <span class="dz-tag">IMG</span>
+            <span class="dz-tag">VIDEO</span>
+            <span class="dz-tag">APK</span>
+            <span class="dz-tag">ZIP</span>
+            <span class="dz-tag">+more</span>
+          </div>
         </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- input مخفي -->
 <input type="file" id="fileInput" multiple style="display:none">
 
-<!-- Socket.io -->
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-
 <script>
-// ══════════════════════════════════════════════════════════════
-//  AirRoom — Client v3.0
-//  إصلاح شامل: اتصال دائم + إشعارات واتساب + chunk queue + بلا تعارضات
-// ══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════
+//  AirRoom Client — v3.0
+// ══════════════════════════════════════════
 
-// ─── الحالة العامة ─────────────────────────────────────────────
-let socket;
-let me = {
-  userId:   null,
-  username: null,
-  deviceId: null
-};
-let selected = {
-  userId:   null,
-  username: null,
-  isOnline: false
-};
+const CHUNK = 256 * 1024;
+let socket, me = {}, sel = {};
+const incoming = new Map();
 
-// ─── الثوابت ───────────────────────────────────────────────────
-const CHUNK_SIZE = 256 * 1024; // 256 KB
-const incomingChunks = new Map(); // name → {chunks[], total, type, size, received}
-
-// ══════════════════════════════════════════════════════════════
-//  1. تهيئة Socket — مع إعادة اتصال تلقائية
-// ══════════════════════════════════════════════════════════════
-
+// ── Socket init ──────────────────────────
 function initSocket() {
-  socket = io({
-    reconnection:        true,
-    reconnectionDelay:   1000,
-    reconnectionDelayMax: 5000,
-    reconnectionAttempts: Infinity,
-    timeout: 20000
-  });
+  socket = io({ reconnection:true, reconnectionDelay:1000, reconnectionDelayMax:5000, reconnectionAttempts:Infinity });
 
   socket.on('connect', () => {
-    console.log('[socket] connected:', socket.id);
     hideBanner();
-    // إعادة تسجيل الدخول تلقائياً بعد أي انقطاع
-    if (me.userId) {
-      reAuthenticate();
-    } else {
-      initAuthScreen();
-    }
+    if (me.userId) reAuth(); else initAuth();
   });
+  socket.on('disconnect', () => showBanner());
+  socket.on('connect_error', () => showBanner());
 
-  socket.on('disconnect', (reason) => {
-    console.warn('[socket] disconnected:', reason);
-    showBanner();
-  });
-
-  socket.on('connect_error', () => {
-    showBanner();
-  });
-
-  // ─── أحداث جهات الاتصال ──────────────────────────────────
-  socket.on('contact_online', ({ userId, username }) => {
-    toast(`${username} متصل الآن 🟢`, 'success');
+  socket.on('contact_online',  ({ userId, username }) => {
+    toast(`🟢 ${username} متصل الآن`, 'success');
+    if (sel.userId === userId) { sel.online = true; setHdrStatus(true); }
     loadContacts();
-    if (selected.userId === userId) {
-      selected.isOnline = true;
-      updatePartnerStatus(true);
-    }
   });
-
   socket.on('contact_offline', ({ userId, username }) => {
-    toast(`${username} غير متصل ⚪`, 'info');
-    loadContacts();
-    if (selected.userId === userId) {
-      selected.isOnline = false;
-      updatePartnerStatus(false);
-    }
-  });
-
-  socket.on('user_added_as_contact', ({ userId, username }) => {
-    toast(`${username} أضافك كجهة اتصال 🔗`, 'success');
-    pushNotify('جهة اتصال جديدة', `${username} أضافك إلى جهات اتصاله`);
+    toast(`⚪ ${username} غير متصل`, 'info');
+    if (sel.userId === userId) { sel.online = false; setHdrStatus(false); }
     loadContacts();
   });
-
-  socket.on('session_replaced', () => {
-    toast('تم تسجيل الدخول من جهاز آخر', 'error');
+  socket.on('user_added_as_contact', ({ username }) => {
+    toast(`🔗 ${username} أضافك كجهة اتصال`, 'success');
+    notify('جهة اتصال جديدة', `${username} أضافك`);
+    loadContacts();
   });
+  socket.on('session_replaced', () => toast('تم فتح جلسة جديدة من جهاز آخر', 'warn'));
 
-  // ─── استقبال ملف كامل (pending) ─────────────────────────
-  socket.on('receive_pending_file', ({ senderUsername, fileName, fileData, mimeType, fileSize }) => {
-    const data = fileData instanceof ArrayBuffer ? fileData
-                 : (typeof fileData === 'object' && fileData?.data)
-                   ? new Uint8Array(fileData.data).buffer
-                   : fileData;
-    downloadBlob(data, fileName, mimeType);
-    const msg = `📋 ملف معلق من ${senderUsername}: ${fileName}`;
-    toast(msg, 'success');
-    pushNotify('📋 ملف معلق وصل', `${senderUsername}: ${fileName} (${fmtSize(fileSize)})`);
-    addBubble('received', fileName, fileSize || 0, senderUsername, true);
-  });
-
-  // استقبال ملف مباشر
   socket.on('receive_file', ({ senderUsername, fileName, fileSize, fileData, mimeType }) => {
-    const data = fileData instanceof ArrayBuffer ? fileData
-                 : (typeof fileData === 'object' && fileData?.data)
-                   ? new Uint8Array(fileData.data).buffer
-                   : fileData;
-    downloadBlob(data, fileName, mimeType);
-    toast(`📥 استلمت ${fileName} من ${senderUsername}`, 'success');
-    pushNotify('📥 ملف جديد!', `${senderUsername}: ${fileName} (${fmtSize(fileSize)})`, true);
-    addBubble('received', fileName, fileSize, senderUsername);
-    setProgress('recv', -1, '');
+    saveDL(fileData, fileName, mimeType);
+    toast(`📥 ${fileName} من ${senderUsername}`, 'success');
+    notify('📥 ملف وصل!', `${senderUsername}: ${fileName} · ${fmt(fileSize)}`, true);
+    addMsg('in', fileName, fileSize, senderUsername);
+    setProgress('r',-1,'');
   });
-
-  // استقبال chunk
+  socket.on('receive_pending_file', ({ senderUsername, fileName, fileSize, fileData, mimeType }) => {
+    saveDL(fileData, fileName, mimeType);
+    toast(`📋 ${fileName} معلق من ${senderUsername}`, 'success');
+    notify('📋 ملف معلق وصل', `${senderUsername}: ${fileName}`, true);
+    addMsg('in', fileName, fileSize, senderUsername, true);
+  });
   socket.on('receive_chunk', ({ senderUsername, name, type, size, total, index, data }) => {
-    if (!incomingChunks.has(name)) {
-      incomingChunks.set(name, {
-        chunks: new Array(total), total, type, size,
-        received: 0, senderUsername
-      });
-    }
-    const entry = incomingChunks.get(name);
-    // تحويل البيانات إذا احتجنا
-    entry.chunks[index] = data instanceof ArrayBuffer ? data
-                          : (typeof data === 'object' && data?.data)
-                            ? new Uint8Array(data.data).buffer : data;
-    entry.received++;
-    setProgress('recv', Math.round((entry.received / total) * 100), name);
-
-    if (entry.received === total) {
-      const blob = new Blob(entry.chunks, { type: entry.type });
-      const url  = URL.createObjectURL(blob);
-      triggerDownload(url, name);
-      incomingChunks.delete(name);
-      toast(`📥 استلمت ${name} من ${senderUsername}`, 'success');
-      pushNotify('📥 ملف جديد!', `${senderUsername}: ${name} (${fmtSize(size)})`, true);
-      addBubble('received', name, size, senderUsername);
-      setTimeout(() => setProgress('recv', -1, ''), 1500);
+    if (!incoming.has(name)) incoming.set(name, { chunks:new Array(total), total, type, size, senderUsername, got:0 });
+    const e = incoming.get(name);
+    e.chunks[index] = toAB(data); e.got++;
+    setProgress('r', Math.round(e.got/total*100), name);
+    if (e.got === total) {
+      const blob = new Blob(e.chunks, { type: e.type });
+      dl(URL.createObjectURL(blob), name);
+      incoming.delete(name);
+      toast(`📥 ${name} من ${senderUsername}`, 'success');
+      notify('📥 ملف وصل!', `${senderUsername}: ${name} · ${fmt(size)}`, true);
+      addMsg('in', name, size, senderUsername);
+      setTimeout(() => setProgress('r',-1,''), 1500);
     }
   });
-
-  socket.on('file_sent_success', ({ fileName }) => {
-    toast(`✅ تم إرسال ${fileName}`, 'success');
-  });
-
-  socket.on('file_queued', ({ fileName }) => {
-    toast(`📋 ${fileName} سيُرسل عند اتصال الطرف الآخر`, 'info');
-  });
-
-  socket.on('file_error', ({ error }) => {
-    toast(`❌ ${error}`, 'error');
-  });
+  socket.on('file_sent_success', ({ fileName }) => toast(`✅ تم إرسال ${fileName}`, 'success'));
+  socket.on('file_queued',       ({ fileName }) => toast(`📋 ${fileName} سيُرسل عند الاتصال`, 'warn'));
+  socket.on('file_error',        ({ error })    => toast(`❌ ${error}`, 'error'));
 }
 
-// ══════════════════════════════════════════════════════════════
-//  2. شاشة المصادقة
-// ══════════════════════════════════════════════════════════════
-
-function initAuthScreen() {
-  const savedUsername = localStorage.getItem('airroom_username');
-  if (savedUsername) {
-    showLoginScreen();
-    document.getElementById('inputLoginUsername').value = savedUsername;
-  } else {
-    showRegisterScreen();
-  }
+function toAB(d) {
+  if (d instanceof ArrayBuffer) return d;
+  if (d?.data) return new Uint8Array(d.data).buffer;
+  return d;
 }
 
-function showRegisterScreen() {
-  document.getElementById('screenRegister').style.display = 'block';
-  document.getElementById('screenLogin').style.display    = 'none';
-  setTimeout(() => document.getElementById('inputNewUsername').focus(), 100);
+// ── Auth ─────────────────────────────────
+function initAuth() {
+  const saved = localStorage.getItem('ar_u');
+  if (saved) { showLogin(); document.getElementById('inputLogin').value = saved; }
+  else showRegister();
+}
+function showRegister() {
+  document.getElementById('paneRegister').style.display = 'block';
+  document.getElementById('paneLogin').style.display    = 'none';
+  setTimeout(() => document.getElementById('inputReg').focus(), 100);
+}
+function showLogin() {
+  document.getElementById('paneRegister').style.display = 'none';
+  document.getElementById('paneLogin').style.display    = 'block';
+  setTimeout(() => document.getElementById('inputLogin').focus(), 100);
 }
 
-function showLoginScreen() {
-  document.getElementById('screenRegister').style.display = 'none';
-  document.getElementById('screenLogin').style.display    = 'block';
-  setTimeout(() => document.getElementById('inputLoginUsername').focus(), 100);
-}
-
-// التحقق الفوري من الاسم
-let _checkTimer;
-document.getElementById('inputNewUsername').addEventListener('input', (e) => {
-  const val = e.target.value.trim();
-  clearTimeout(_checkTimer);
-  document.getElementById('btnRegister').disabled = true;
-  document.getElementById('errorRegister').textContent   = '';
-  document.getElementById('successRegister').textContent = '';
-
-  if (val.length < 3) {
-    if (val.length > 0)
-      document.getElementById('errorRegister').textContent = 'يجب أن يكون 3 أحرف على الأقل';
-    return;
-  }
-  _checkTimer = setTimeout(() => checkUsername(val), 400);
+let _ct;
+document.getElementById('inputReg').addEventListener('input', e => {
+  const v = e.target.value.trim();
+  clearTimeout(_ct);
+  document.getElementById('btnReg').disabled = true;
+  const m = document.getElementById('msgReg');
+  m.className = 'field-msg'; m.textContent = '';
+  if (v.length < 3) { if (v.length) { m.className='field-msg err'; m.textContent='يجب 3 أحرف على الأقل'; } return; }
+  m.textContent = '⏳ جاري التحقق…'; m.className = 'field-msg';
+  _ct = setTimeout(() => checkUser(v), 400);
 });
-
-async function checkUsername(username) {
+async function checkUser(u) {
+  const m = document.getElementById('msgReg');
   try {
-    const res  = await fetch(`/api/check-username/${encodeURIComponent(username)}`);
-    const data = await res.json();
-    if (data.available) {
-      document.getElementById('successRegister').textContent = '✅ هذا الاسم متوفر!';
-      document.getElementById('errorRegister').textContent   = '';
-      document.getElementById('btnRegister').disabled = false;
+    const r = await fetch(`/api/check-username/${encodeURIComponent(u)}`);
+    const d = await r.json();
+    if (d.available) {
+      m.className='field-msg ok'; m.textContent='✓ متوفر';
+      document.getElementById('btnReg').disabled = false;
     } else {
-      document.getElementById('errorRegister').textContent   = '❌ هذا الاسم مستخدم بالفعل';
-      document.getElementById('successRegister').textContent = '';
+      m.className='field-msg err'; m.textContent='✗ مستخدم بالفعل';
     }
-  } catch {
-    document.getElementById('errorRegister').textContent = 'خطأ في التحقق';
-  }
+  } catch { m.className='field-msg err'; m.textContent='خطأ في الاتصال'; }
 }
 
 function doRegister() {
-  const username = document.getElementById('inputNewUsername').value.trim();
-  const errDiv   = document.getElementById('errorRegister');
-  const btn      = document.getElementById('btnRegister');
-  if (!username || username.length < 3) {
-    errDiv.textContent = 'يجب أن يكون 3 أحرف على الأقل';
-    return;
-  }
-  setBtn(btn, true, 'جاري التسجيل…');
-  socket.emit('register_new_user', { username }, (result) => {
-    if (result.success) {
-      onAuthenticated(result);
-    } else {
-      errDiv.textContent = result.error || 'فشل التسجيل';
-      setBtn(btn, false, 'إنشاء حساب جديد');
+  const u = document.getElementById('inputReg').value.trim();
+  const b = document.getElementById('btnReg');
+  if (!u || u.length < 3) return;
+  setB(b, true, 'جاري…');
+  socket.emit('register_new_user', { username: u }, r => {
+    if (r.success) authed(r);
+    else {
+      const m = document.getElementById('msgReg');
+      m.className='field-msg err'; m.textContent = r.error || 'فشل';
+      setB(b, false, 'إنشاء الحساب');
     }
   });
 }
-
 function doLogin() {
-  const username = document.getElementById('inputLoginUsername').value.trim();
-  const errDiv   = document.getElementById('errorLogin');
-  const btn      = document.getElementById('btnLogin');
-  if (!username) { errDiv.textContent = 'أدخل اسم المستخدم'; return; }
-  setBtn(btn, true, 'جاري الدخول…');
-  socket.emit('reconnect_user', { username }, (result) => {
-    if (result.success) {
-      onAuthenticated(result);
-    } else {
-      errDiv.textContent = result.error || 'فشل تسجيل الدخول';
-      setBtn(btn, false, 'تسجيل الدخول');
-    }
+  const u = document.getElementById('inputLogin').value.trim();
+  const b = document.getElementById('btnLogin');
+  const m = document.getElementById('msgLogin');
+  if (!u) { m.textContent='أدخل الاسم'; return; }
+  setB(b, true, 'جاري…');
+  socket.emit('reconnect_user', { username: u }, r => {
+    if (r.success) authed(r);
+    else { m.textContent = r.error || 'فشل'; setB(b, false, 'دخول ←'); }
   });
 }
-
-function reAuthenticate() {
-  // إعادة تسجيل الدخول بعد إعادة الاتصال
-  if (me.deviceId) {
-    socket.emit('login_user', { deviceId: me.deviceId }, (result) => {
-      if (result.success) {
-        me.userId   = result.userId;
-        me.username = result.username;
-        loadContacts();
-      }
-    });
-  } else if (me.username) {
-    socket.emit('reconnect_user', { username: me.username }, (result) => {
-      if (result.success) {
-        me.userId   = result.userId;
-        me.deviceId = result.deviceId;
-        loadContacts();
-      }
-    });
-  }
-}
-
-function onAuthenticated(result) {
-  me.userId   = result.userId;
-  me.username = result.username;
-  me.deviceId = result.deviceId;
-  localStorage.setItem('airroom_username', result.username);
-  localStorage.setItem('airroom_deviceId', result.deviceId);
-  showApp();
-  toast(`مرحباً ${result.username}! 🎉`, 'success');
-  requestNotificationPermission();
-}
-
-function doLogout() {
-  localStorage.removeItem('airroom_username');
-  localStorage.removeItem('airroom_deviceId');
-  location.reload();
-}
-
-// ══════════════════════════════════════════════════════════════
-//  3. التطبيق الرئيسي
-// ══════════════════════════════════════════════════════════════
-
-function showApp() {
+function authed(r) {
+  me = { userId: r.userId, username: r.username, deviceId: r.deviceId };
+  localStorage.setItem('ar_u', r.username);
+  localStorage.setItem('ar_d', r.deviceId);
   document.getElementById('authScreen').style.display = 'none';
   document.getElementById('mainApp').classList.add('show');
-  document.getElementById('lblUsername').textContent = me.username;
-  loadContacts();
-  setupDropZone();
+  document.getElementById('pillName').textContent  = r.username;
+  document.getElementById('avatarLetter').textContent = r.username[0].toUpperCase();
+  loadContacts(); setupDZ(); askNotif();
+  toast(`مرحباً ${r.username} 👋`, 'success');
 }
+function reAuth() {
+  const d = me.deviceId || localStorage.getItem('ar_d');
+  const u = me.username || localStorage.getItem('ar_u');
+  if (d) socket.emit('login_user', { deviceId: d }, r => { if (r.success) { me.userId=r.userId; loadContacts(); } });
+  else if (u) socket.emit('reconnect_user', { username: u }, r => { if (r.success) { me.userId=r.userId; me.deviceId=r.deviceId; loadContacts(); } });
+}
+function doLogout() { localStorage.clear(); location.reload(); }
 
-// ─── إضافة جهة اتصال ─────────────────────────────────────────
-function doAddContact(e) {
-  e.preventDefault();
-  const username = document.getElementById('inputAddContact').value.trim();
-  if (!username) { toast('أدخل اسم المستخدم أولاً', 'error'); return; }
-  if (username === me.username) { toast('لا يمكنك إضافة نفسك', 'error'); return; }
-
-  socket.emit('connect_to_user', { targetUsername: username }, (result) => {
-    if (result.success) {
-      document.getElementById('inputAddContact').value = '';
-      toast(`تم الاتصال مع ${username} ✅`, 'success');
-      loadContacts();
-    } else {
-      toast(result.error || 'فشل الاتصال', 'error');
-    }
+// ── Contacts ─────────────────────────────
+function doAddContact() {
+  const u = document.getElementById('inputAdd').value.trim();
+  if (!u) { toast('أدخل اسم المستخدم', 'error'); return; }
+  if (u === me.username) { toast('لا يمكنك إضافة نفسك', 'error'); return; }
+  socket.emit('connect_to_user', { targetUsername: u }, r => {
+    if (r.success) { document.getElementById('inputAdd').value=''; toast(`✅ تم ربطك مع ${u}`, 'success'); loadContacts(); }
+    else toast(r.error || 'فشل', 'error');
   });
 }
+document.getElementById('inputAdd').addEventListener('keydown', e => { if (e.key==='Enter') doAddContact(); });
 
-// ─── تحميل الجهات ─────────────────────────────────────────────
 function loadContacts() {
-  socket.emit('get_contacts', (result) => {
-    if (result.success) renderContacts(result.contacts);
-  });
+  socket.emit('get_contacts', r => { if (r.success) renderContacts(r.contacts); });
 }
-
-function renderContacts(contacts) {
-  const list = document.getElementById('contactsList');
-  if (!contacts || contacts.length === 0) {
-    list.innerHTML = `
-      <div class="contacts-empty">
-        <div class="empty-icon">👥</div>
-        <p>لا توجد جهات اتصال بعد<br>ابحث عن صديق وابدأ المشاركة</p>
-      </div>`;
+function renderContacts(list) {
+  const el = document.getElementById('contactsList');
+  if (!list?.length) {
+    el.innerHTML = `<div class="contacts-empty"><div class="ce-icon">👥</div><p>لا يوجد جهات اتصال بعد<br>ابحث عن صديق وابدأ</p></div>`;
     return;
   }
-  list.innerHTML = contacts.map(c => `
-    <div class="contact-item ${c.contactUserId === selected.userId ? 'active' : ''}"
-         onclick="selectContact('${c.contactUserId}', '${c.contactUsername}', ${c.isOnline})">
-      <div class="contact-avatar">${c.contactUsername[0].toUpperCase()}</div>
-      <div class="contact-info">
-        <div class="contact-name">${escapeHtml(c.contactUsername)}</div>
-        <div class="contact-status">
-          ${c.isOnline
-            ? '<span class="dot-online">🟢 متصل</span>'
-            : '<span class="dot-offline">⚪ غير متصل</span>'}
-        </div>
+  el.innerHTML = list.map(c => `
+    <div class="contact-item ${c.contactUserId===sel.userId?'active':''}"
+         onclick="selContact('${c.contactUserId}','${esc(c.contactUsername)}',${c.isOnline})">
+      <div class="c-avatar ${c.isOnline?'c-avatar-online':''}">${c.contactUsername[0].toUpperCase()}</div>
+      <div class="c-info">
+        <div class="c-name">${esc(c.contactUsername)}</div>
+        <div class="c-status ${c.isOnline?'online':''}">${c.isOnline?'🟢 متصل':'⚪ غير متصل'}</div>
       </div>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
-function selectContact(userId, username, isOnline) {
-  selected.userId   = userId;
-  selected.username = username;
-  selected.isOnline = !!isOnline;
-
-  // تحديث الـ active class
-  document.querySelectorAll('.contact-item')
-    .forEach(el => el.classList.remove('active'));
+function selContact(uid, uname, online) {
+  sel = { userId:uid, username:uname, online:!!online };
+  document.querySelectorAll('.contact-item').forEach(e=>e.classList.remove('active'));
   event?.currentTarget?.classList?.add('active');
-
-  document.getElementById('headerName').textContent = `💬 ${username}`;
-  updatePartnerStatus(!!isOnline);
-
-  document.getElementById('welcomeScreen').style.display = 'none';
-  document.getElementById('chatArea').classList.add('show');
-
-  // عرض تحذير الأوفلاين
-  document.getElementById('offlineWarn').classList.toggle('show', !isOnline);
-
-  // موبايل: أظهر المنطقة الرئيسية
-  if (window.innerWidth <= 700) {
+  document.getElementById('hdrAvatar').textContent  = uname[0].toUpperCase();
+  document.getElementById('hdrName').textContent    = uname;
+  setHdrStatus(!!online);
+  document.getElementById('welcomePane').style.display = 'none';
+  document.getElementById('chatPane').classList.add('show');
+  document.getElementById('offlinePill').classList.toggle('show', !online);
+  if (window.innerWidth <= 680) {
     document.getElementById('sidebar').classList.add('hidden');
     document.getElementById('mainArea').classList.remove('hidden');
   }
 }
-
-function updatePartnerStatus(isOnline) {
-  document.getElementById('headerStatus').textContent = isOnline ? '🟢 متصل' : '⚪ غير متصل';
-  document.getElementById('offlineWarn').classList.toggle('show', !isOnline);
+function setHdrStatus(on) {
+  const el = document.getElementById('hdrStatus');
+  el.textContent = on ? '🟢 متصل الآن' : '⚪ غير متصل';
+  el.className = 'chat-header-status' + (on ? ' online' : '');
+  document.getElementById('offlinePill').classList.toggle('show', !on);
 }
-
 function goBack() {
   document.getElementById('sidebar').classList.remove('hidden');
   document.getElementById('mainArea').classList.add('hidden');
 }
 
-// ══════════════════════════════════════════════════════════════
-//  4. إرسال الملفات
-// ══════════════════════════════════════════════════════════════
-
-function setupDropZone() {
-  const dropZone  = document.getElementById('dropZone');
-  const fileInput = document.getElementById('fileInput');
-  if (!dropZone) return;
-
-  dropZone.addEventListener('click', () => fileInput.click());
-
-  dropZone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    dropZone.classList.add('dragover');
-  });
-  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-  dropZone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    dropZone.classList.remove('dragover');
-    handleFiles(e.dataTransfer.files);
-  });
-  fileInput.addEventListener('change', (e) => {
-    handleFiles(e.target.files);
-    fileInput.value = '';
-  });
+// ── File send ─────────────────────────────
+function setupDZ() {
+  const dz = document.getElementById('dropZone');
+  const fi = document.getElementById('fileInput');
+  dz.addEventListener('click', () => fi.click());
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+  dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('over'); handleFiles(e.dataTransfer.files); });
+  fi.addEventListener('change', e => { handleFiles(e.target.files); fi.value=''; });
 }
-
 function handleFiles(files) {
-  if (!selected.userId) {
-    toast('اختر جهة اتصال أولاً', 'error');
-    return;
-  }
-  for (const file of files) sendFileChunked(file);
+  if (!sel.userId) { toast('اختر جهة اتصال أولاً', 'error'); return; }
+  for (const f of files) sendChunked(f);
 }
-
-function sendFileChunked(file) {
-  const total = Math.ceil(file.size / CHUNK_SIZE);
-  let index   = 0;
-  setProgress('send', 0, file.name);
-
-  function readNext() {
-    const blob   = file.slice(index * CHUNK_SIZE, Math.min((index + 1) * CHUNK_SIZE, file.size));
-    const reader = new FileReader();
-
-    reader.onload = (e) => {
+function sendChunked(file) {
+  const total = Math.ceil(file.size / CHUNK);
+  let i = 0;
+  setProgress('s', 0, file.name);
+  function next() {
+    const r = new FileReader();
+    r.onload = e => {
       socket.emit('send_chunk', {
-        recipientUserId: selected.userId,
-        name:  file.name,
-        type:  file.type || 'application/octet-stream',
-        size:  file.size,
-        total,
-        index,
-        data:  e.target.result
+        recipientUserId: sel.userId, name: file.name,
+        type: file.type||'application/octet-stream',
+        size: file.size, total, index: i, data: e.target.result
       });
-      index++;
-      const pct = Math.round((index / total) * 100);
-      setProgress('send', pct, file.name);
-
-      if (index < total) {
-        setTimeout(readNext, 0);
-      } else {
-        addBubble('sent', file.name, file.size, selected.username);
-        setTimeout(() => setProgress('send', -1, ''), 1500);
-      }
+      i++;
+      setProgress('s', Math.round(i/total*100), file.name);
+      if (i < total) setTimeout(next, 0);
+      else { addMsg('out', file.name, file.size, sel.username); setTimeout(()=>setProgress('s',-1,''),1500); }
     };
-
-    reader.onerror = () => toast(`❌ خطأ في قراءة ${file.name}`, 'error');
-    reader.readAsArrayBuffer(blob);
+    r.onerror = () => toast('❌ خطأ في القراءة', 'error');
+    r.readAsArrayBuffer(file.slice(i*CHUNK, Math.min((i+1)*CHUNK, file.size)));
   }
-
-  readNext();
+  next();
 }
 
-// ══════════════════════════════════════════════════════════════
-//  5. مساعدات التنزيل
-// ══════════════════════════════════════════════════════════════
-
-function downloadBlob(data, fileName, mimeType) {
-  let blob;
-  if (data instanceof Blob) {
-    blob = data;
-  } else if (data instanceof ArrayBuffer) {
-    blob = new Blob([data], { type: mimeType || 'application/octet-stream' });
-  } else if (typeof data === 'object' && data?.data) {
-    blob = new Blob([new Uint8Array(data.data)], { type: mimeType || 'application/octet-stream' });
-  } else {
-    blob = new Blob([data], { type: mimeType || 'application/octet-stream' });
-  }
-  const url = URL.createObjectURL(blob);
-  triggerDownload(url, fileName);
-}
-
-function triggerDownload(url, fileName) {
-  const a = document.createElement('a');
-  a.href = url; a.download = fileName; a.style.display = 'none';
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => { URL.revokeObjectURL(url); document.body.removeChild(a); }, 1500);
-}
-
-// ══════════════════════════════════════════════════════════════
-//  6. شريط التقدم
-// ══════════════════════════════════════════════════════════════
-
+// ── Progress ─────────────────────────────
 function setProgress(dir, pct, name) {
-  const prefix  = dir === 'send' ? 'send' : 'recv';
-  const wrap  = document.getElementById(`${prefix}ProgressWrap`);
-  const fill  = document.getElementById(`${prefix}ProgressFill`);
-  const label = document.getElementById(`${prefix}ProgressLabel`);
-  if (!wrap) return;
+  const isS = dir === 's';
+  const wrap = document.getElementById(isS ? 'pSendWrap' : 'pRecvWrap');
+  const fill = document.getElementById(isS ? 'pSendFill' : 'pRecvFill');
+  const txt  = document.getElementById(isS ? 'pSendTxt'  : 'pRecvTxt');
+  const pctEl= document.getElementById(isS ? 'pSendPct'  : 'pRecvPct');
   if (pct < 0) { wrap.classList.remove('show'); return; }
   wrap.classList.add('show');
-  fill.style.width   = pct + '%';
-  const emoji = dir === 'send' ? '📤 إرسال' : '📥 استقبال';
-  label.textContent  = pct < 100 ? `${emoji} ${name} — ${pct}%` : `✅ اكتمل ${name}`;
+  fill.style.width = pct + '%';
+  txt.textContent  = (isS ? '📤 ' : '📥 ') + name;
+  pctEl.textContent = pct + '%';
 }
 
-// ══════════════════════════════════════════════════════════════
-//  7. سجل الرسائل (Bubbles)
-// ══════════════════════════════════════════════════════════════
-
-function addBubble(dir, fileName, size, partnerName, isPending = false) {
-  const area = document.getElementById('messagesArea');
-  if (!area) return;
-
-  const ext  = fileName.split('.').pop().toLowerCase();
-  const icon = fileIcon(ext);
-  const time = new Date().toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' });
-  const tag  = isPending ? ' (معلق)' : '';
-
+// ── Messages ─────────────────────────────
+function addMsg(dir, name, size, partner, pending=false) {
+  const area = document.getElementById('msgsPane');
+  const time = new Date().toLocaleTimeString('ar', {hour:'2-digit',minute:'2-digit'});
   const el = document.createElement('div');
-  el.className = `msg-bubble ${dir === 'sent' ? 'sent' : 'received'}`;
+  el.className = `msg ${dir==='out'?'sent':'received'}`;
   el.innerHTML = `
-    <div class="file-icon">${icon}</div>
-    <div class="file-name">${escapeHtml(fileName)}${tag}</div>
-    <div class="file-meta">${fmtSize(size)} ${dir === 'received' ? '· من ' + escapeHtml(partnerName) : ''}</div>
-    <div class="msg-time">${time}</div>
-  `;
+    <div class="msg-bubble">
+      <div class="msg-file-icon">${ficon(name.split('.').pop())}</div>
+      <div class="msg-file-name">${esc(name)}</div>
+      <div class="msg-file-meta">${fmt(size)} ${dir==='in'?'· من '+esc(partner):''}</div>
+      ${pending ? '<div class="msg-pending-badge">⏳ كان معلقاً</div>' : ''}
+      <div class="msg-time">${time}${dir==='out'?' <span class="msg-check">✓✓</span>':''}</div>
+    </div>`;
   area.appendChild(el);
   area.scrollTop = area.scrollHeight;
 }
 
-function fileIcon(ext) {
-  const map = {
-    pdf:'📄', doc:'📝', docx:'📝', xls:'📊', xlsx:'📊',
-    ppt:'📊', pptx:'📊', txt:'📃',
-    jpg:'🖼️', jpeg:'🖼️', png:'🖼️', gif:'🖼️', webp:'🖼️',
-    mp4:'🎬', mov:'🎬', avi:'🎬', mkv:'🎬',
-    mp3:'🎵', wav:'🎵', aac:'🎵', ogg:'🎵',
-    zip:'🗜️', rar:'🗜️', gz:'🗜️', '7z':'🗜️',
-    apk:'📦', exe:'⚙️',
-  };
-  return map[ext] || '📁';
+// ── Download ─────────────────────────────
+function saveDL(data, name, mime) {
+  let blob;
+  if (data instanceof Blob) blob = data;
+  else if (data instanceof ArrayBuffer) blob = new Blob([data], {type:mime||'application/octet-stream'});
+  else if (data?.data) blob = new Blob([new Uint8Array(data.data)], {type:mime||'application/octet-stream'});
+  else blob = new Blob([data], {type:mime||'application/octet-stream'});
+  dl(URL.createObjectURL(blob), name);
+}
+function dl(url, name) {
+  const a = Object.assign(document.createElement('a'), {href:url,download:name,style:'display:none'});
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1500);
 }
 
-// ══════════════════════════════════════════════════════════════
-//  8. الإشعارات — مثل واتساب
-// ══════════════════════════════════════════════════════════════
-
-function requestNotificationPermission() {
+// ── Notifications ────────────────────────
+function askNotif() {
   if (!('Notification' in window)) return;
-  if (Notification.permission === 'default') {
-    Notification.requestPermission().then(perm => {
-      if (perm === 'granted') toast('🔔 ستصلك إشعارات الملفات دائماً', 'success');
-    });
-  }
+  if (Notification.permission === 'default')
+    Notification.requestPermission().then(p => { if (p==='granted') toast('🔔 ستصلك إشعارات الملفات', 'info'); });
 }
-
-function pushNotify(title, body, urgent = false) {
+function notify(title, body, urgent=false) {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
-  // أرسل الإشعار دائماً (حتى لو التطبيق مفتوح في التبويب)
-  // هذا السلوك يطابق واتساب
   try {
     const n = new Notification(title, {
-      body,
-      icon:    '/icon-192.png',
-      badge:   '/icon-192.png',
-      tag:     'airroom-' + Date.now(),
-      vibrate: urgent ? [300, 100, 300, 100, 300] : [200, 100, 200],
-      requireInteraction: urgent,
-      silent:  false
+      body, icon:'/icon-192.png', badge:'/icon-192.png',
+      tag:'ar-'+Date.now(),
+      vibrate: urgent ? [300,100,300,100,300] : [200,100,200],
+      requireInteraction: urgent, silent: false
     });
     n.onclick = () => { window.focus(); n.close(); };
-    // أغلق بعد 6 ثوان إذا لم يكن urgent
     if (!urgent) setTimeout(() => n.close(), 6000);
-  } catch(e) { console.warn('Notification error:', e); }
+  } catch(e) {}
 }
 
-// ══════════════════════════════════════════════════════════════
-//  9. Toast (إشعارات داخل التطبيق)
-// ══════════════════════════════════════════════════════════════
-
-function toast(message, type = 'info') {
-  const container = document.getElementById('toastContainer');
+// ── Toast ────────────────────────────────
+function toast(msg, type='info') {
+  const c = document.getElementById('toastRoot');
   const el = document.createElement('div');
   el.className = `toast ${type}`;
-  el.textContent = message;
-  container.appendChild(el);
-
-  // اختفاء تلقائي
-  const duration = type === 'error' ? 5000 : 3500;
+  el.textContent = msg;
+  c.appendChild(el);
+  const dur = type==='error' ? 5000 : 3500;
   setTimeout(() => {
-    el.style.animation = 'toastOut .3s ease forwards';
+    el.style.opacity='0'; el.style.transform='translateX(-16px)';
+    el.style.transition='all .3s';
     setTimeout(() => el.remove(), 300);
-  }, duration);
+  }, dur);
 }
 
-// ══════════════════════════════════════════════════════════════
-//  10. بانر الانقطاع
-// ══════════════════════════════════════════════════════════════
+// ── Banner ───────────────────────────────
+function showBanner() { document.getElementById('reconnectBanner').classList.add('show'); }
+function hideBanner() { document.getElementById('reconnectBanner').classList.remove('show'); }
 
-function showBanner() { document.getElementById('offlineBanner').classList.add('show'); }
-function hideBanner() { document.getElementById('offlineBanner').classList.remove('show'); }
-
-// ══════════════════════════════════════════════════════════════
-//  11. مساعدات عامة
-// ══════════════════════════════════════════════════════════════
-
-function fmtSize(bytes) {
-  if (!bytes) return '0 B';
-  if (bytes >= 1048576) return (bytes / 1048576).toFixed(2) + ' MB';
-  if (bytes >= 1024)    return (bytes / 1024).toFixed(1) + ' KB';
-  return bytes + ' B';
+// ── Utils ────────────────────────────────
+function fmt(b) {
+  if (!b) return '0 B';
+  if (b>=1048576) return (b/1048576).toFixed(2)+' MB';
+  if (b>=1024)    return (b/1024).toFixed(1)+' KB';
+  return b+' B';
+}
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function setB(b,d,t) { b.disabled=d; b.textContent=t; }
+function ficon(ext) {
+  const m={pdf:'📄',doc:'📝',docx:'📝',xls:'📊',xlsx:'📊',ppt:'📊',pptx:'📊',txt:'📃',
+    jpg:'🖼️',jpeg:'🖼️',png:'🖼️',gif:'🖼️',webp:'🖼️',svg:'🖼️',
+    mp4:'🎬',mov:'🎬',avi:'🎬',mkv:'🎬',
+    mp3:'🎵',wav:'🎵',aac:'🎵',
+    zip:'🗜️',rar:'🗜️',gz:'🗜️','7z':'🗜️',
+    apk:'📦',exe:'⚙️',dmg:'🍎',iso:'💿'};
+  return m[ext?.toLowerCase()] || '📁';
 }
 
-function escapeHtml(str) {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
+// ── Keyboard shortcuts ───────────────────
+document.getElementById('inputReg').addEventListener('keydown', e => { if(e.key==='Enter') doRegister(); });
+document.getElementById('inputLogin').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 
-function setBtn(btn, disabled, text) {
-  btn.disabled   = disabled;
-  btn.textContent = text;
-}
-
-// ══════════════════════════════════════════════════════════════
-//  12. اختصارات لوحة المفاتيح
-// ══════════════════════════════════════════════════════════════
-
-document.getElementById('inputNewUsername').addEventListener('keydown', e => {
-  if (e.key === 'Enter') doRegister();
-});
-document.getElementById('inputLoginUsername').addEventListener('keydown', e => {
-  if (e.key === 'Enter') doLogin();
-});
-
-// ══════════════════════════════════════════════════════════════
-//  13. Service Worker
-// ══════════════════════════════════════════════════════════════
-
+// ── Service Worker ───────────────────────
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').then(reg => {
-    console.log('[SW] registered:', reg.scope);
-    reg.addEventListener('updatefound', () => {
-      const nw = reg.installing;
-      nw?.addEventListener('statechange', () => {
-        if (nw.state === 'installed' && navigator.serviceWorker.controller) {
-          toast('تحديث متاح — أعد تحميل الصفحة لتطبيقه', 'info');
-        }
-      });
-    });
-  }).catch(err => console.error('[SW] register error:', err));
+  navigator.serviceWorker.register('/sw.js').catch(()=>{});
 }
 
-// ══════════════════════════════════════════════════════════════
-//  14. البدء
-// ══════════════════════════════════════════════════════════════
-
+// ── START ────────────────────────────────
 initSocket();
 </script>
 </body>
