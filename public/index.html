@@ -764,6 +764,57 @@
     }
     .share-btn:hover { background: var(--surface); border-color: var(--accent); }
 
+    /* ── Download confirm modal ─────────────── */
+    .dl-modal-overlay {
+      position: fixed; inset: 0; z-index: 6000;
+      background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
+      display: flex; align-items: flex-end; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity .3s;
+    }
+    .dl-modal-overlay.show { opacity: 1; pointer-events: all; }
+    .dl-modal {
+      background: var(--ink-2); border: 1px solid var(--border-hi);
+      border-radius: 24px 24px 0 0; padding: 24px 20px 36px;
+      width: 100%; max-width: 480px;
+      transform: translateY(100%); transition: transform .35s cubic-bezier(.23,1,.32,1);
+    }
+    .dl-modal-overlay.show .dl-modal { transform: translateY(0); }
+    .dl-handle {
+      width: 40px; height: 4px; border-radius: 4px;
+      background: var(--border-hi); margin: 0 auto 20px;
+    }
+    .dl-file-row {
+      display: flex; align-items: center; gap: 14px;
+      background: var(--ink-3); border: 1px solid var(--border);
+      border-radius: 14px; padding: 14px;
+      margin-bottom: 20px;
+    }
+    .dl-file-icon { font-size: 32px; flex-shrink: 0; }
+    .dl-file-info { flex: 1; min-width: 0; }
+    .dl-file-name {
+      font-size: 14px; font-weight: 700; color: var(--text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .dl-file-meta { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+    .dl-sender { font-size: 11px; color: var(--accent); margin-top: 2px; }
+    .dl-actions { display: flex; gap: 10px; }
+    .dl-btn-save {
+      flex: 1; padding: 14px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: var(--ink); border: none; border-radius: 12px;
+      font-size: 15px; font-weight: 800; font-family: var(--sans);
+      cursor: pointer; transition: opacity .2s;
+    }
+    .dl-btn-save:hover { opacity: .9; }
+    .dl-btn-cancel {
+      padding: 14px 18px;
+      background: var(--ink-3); border: 1px solid var(--border);
+      color: var(--text-muted); border-radius: 12px;
+      font-size: 14px; font-family: var(--sans); cursor: pointer;
+      transition: background .2s;
+    }
+    .dl-btn-cancel:hover { background: rgba(255,71,87,0.1); color: var(--red); border-color: rgba(255,71,87,0.3); }
+
     .btn-share-trigger {
       background: rgba(0,212,255,0.1);
       border: 1px solid rgba(0,212,255,0.2);
@@ -969,6 +1020,25 @@
 
 <input type="file" id="fileInput" multiple style="display:none">
 
+<!-- ═══════════════ DOWNLOAD CONFIRM ═══════════════ -->
+<div class="dl-modal-overlay" id="dlModal">
+  <div class="dl-modal">
+    <div class="dl-handle"></div>
+    <div class="dl-file-row">
+      <div class="dl-file-icon" id="dlIcon">📁</div>
+      <div class="dl-file-info">
+        <div class="dl-file-name" id="dlName">…</div>
+        <div class="dl-file-meta" id="dlMeta">…</div>
+        <div class="dl-sender" id="dlSender">…</div>
+      </div>
+    </div>
+    <div class="dl-actions">
+      <button class="dl-btn-save" id="dlBtnSave" onclick="confirmDL()">💾 حفظ الملف</button>
+      <button class="dl-btn-cancel" onclick="cancelDL()">تجاهل</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══════════════ SHARE MODAL ═══════════════ -->
 <div class="modal-overlay" id="shareModal" onclick="closeShareOnBg(event)">
   <div class="share-modal">
@@ -1033,17 +1103,17 @@ function initSocket() {
   socket.on('session_replaced', () => toast('تم فتح جلسة جديدة من جهاز آخر', 'warn'));
 
   socket.on('receive_file', ({ senderUsername, fileName, fileSize, fileData, mimeType }) => {
-    saveDL(fileData, fileName, mimeType);
-    toast(`📥 ${fileName} من ${senderUsername}`, 'success');
+    toast(`📥 ملف من ${senderUsername}: ${fileName}`, 'success');
     notify('📥 ملف وصل!', `${senderUsername}: ${fileName} · ${fmt(fileSize)}`, true);
     addMsg('in', fileName, fileSize, senderUsername);
     setProgress('r',-1,'');
+    askDL(fileData, fileName, mimeType, senderUsername);
   });
   socket.on('receive_pending_file', ({ senderUsername, fileName, fileSize, fileData, mimeType }) => {
-    saveDL(fileData, fileName, mimeType);
-    toast(`📋 ${fileName} معلق من ${senderUsername}`, 'success');
+    toast(`📋 ملف معلق من ${senderUsername}: ${fileName}`, 'success');
     notify('📋 ملف معلق وصل', `${senderUsername}: ${fileName}`, true);
     addMsg('in', fileName, fileSize, senderUsername, true);
+    askDL(fileData, fileName, mimeType, senderUsername);
   });
   socket.on('receive_chunk', ({ senderUsername, name, type, size, total, index, data }) => {
     if (!incoming.has(name)) incoming.set(name, { chunks:new Array(total), total, type, size, senderUsername, got:0 });
@@ -1052,12 +1122,12 @@ function initSocket() {
     setProgress('r', Math.round(e.got/total*100), name);
     if (e.got === total) {
       const blob = new Blob(e.chunks, { type: e.type });
-      dl(URL.createObjectURL(blob), name);
       incoming.delete(name);
       toast(`📥 ${name} من ${senderUsername}`, 'success');
       notify('📥 ملف وصل!', `${senderUsername}: ${name} · ${fmt(size)}`, true);
       addMsg('in', name, size, senderUsername);
       setTimeout(() => setProgress('r',-1,''), 1500);
+      askDL(blob, name, type, senderUsername);
     }
   });
   socket.on('file_sent_success', ({ fileName }) => toast(`✅ تم إرسال ${fileName}`, 'success'));
@@ -1284,6 +1354,31 @@ function addMsg(dir, name, size, partner, pending=false) {
   area.scrollTop = area.scrollHeight;
 }
 
+// ── Download confirm ──────────────────────
+let _pendingDL = null;
+
+function askDL(data, name, mime, sender) {
+  _pendingDL = { data, name, mime };
+  const ext = name.split('.').pop();
+  document.getElementById('dlIcon').textContent   = ficon(ext);
+  document.getElementById('dlName').textContent   = name;
+  document.getElementById('dlMeta').textContent   = fmt(data?.size || data?.byteLength || data?.length || 0);
+  document.getElementById('dlSender').textContent = sender ? `📨 من: ${sender}` : '';
+  document.getElementById('dlModal').classList.add('show');
+}
+function confirmDL() {
+  if (!_pendingDL) return;
+  saveDL(_pendingDL.data, _pendingDL.name, _pendingDL.mime);
+  _pendingDL = null;
+  document.getElementById('dlModal').classList.remove('show');
+  toast('💾 جاري الحفظ…', 'info');
+}
+function cancelDL() {
+  _pendingDL = null;
+  document.getElementById('dlModal').classList.remove('show');
+  toast('تم تجاهل الملف', 'warn');
+}
+
 // ── Download ─────────────────────────────
 function saveDL(data, name, mime) {
   let blob;
@@ -1294,7 +1389,7 @@ function saveDL(data, name, mime) {
   dl(URL.createObjectURL(blob), name);
 }
 function dl(url, name) {
-  const a = Object.assign(document.createElement('a'), {href:url,download:name,style:'display:none'});
+  const a = Object.assign(document.createElement('a'), {href:url, download:name, style:'display:none'});
   document.body.appendChild(a); a.click();
   setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1500);
 }
@@ -1375,12 +1470,13 @@ const APP_URL = location.origin;
 
 function openShare() {
   const modal = document.getElementById('shareModal');
-  document.getElementById('shareUrlText').textContent = APP_URL;
+  const installUrl = location.origin + '/install.html';
+  document.getElementById('shareUrlText').textContent = installUrl;
   modal.classList.add('show');
 
   if (!_qrGenerated) {
     _qrGenerated = true;
-    generateQR(APP_URL);
+    generateQR(installUrl);
   }
 }
 
@@ -1414,24 +1510,26 @@ function generateQR(url) {
 }
 
 function copyShareUrl() {
-  navigator.clipboard.writeText(APP_URL).then(() => {
-    toast('✅ تم نسخ الرابط', 'success');
+  const installUrl = location.origin + '/install.html';
+  navigator.clipboard.writeText(installUrl).then(() => {
+    toast('✅ تم نسخ رابط التثبيت', 'success');
   }).catch(() => {
     const ta = document.createElement('textarea');
-    ta.value = APP_URL;
+    ta.value = installUrl;
     document.body.appendChild(ta);
     ta.select(); document.execCommand('copy');
     ta.remove();
-    toast('✅ تم نسخ الرابط', 'success');
+    toast('✅ تم نسخ رابط التثبيت', 'success');
   });
 }
 
 function shareNative() {
+  const installUrl = location.origin + '/install.html';
   if (navigator.share) {
     navigator.share({
       title: 'AirRoom — مشاركة الملفات الفورية',
-      text: 'جرّب AirRoom لمشاركة الملفات فوراً وبدون حدود!',
-      url: APP_URL
+      text: 'جرّب AirRoom! ارسل ملفاتك فوراً بدون حدود 🚀',
+      url: installUrl
     }).catch(() => {});
   } else {
     copyShareUrl();
