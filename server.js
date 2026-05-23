@@ -193,6 +193,31 @@ function addNotification(fromUserId, toUserId, type, message, callback) {
 
 // ───────────────────────────────────────────────────────────────
 
+// ═══════════════════════════════════════════════════════════════
+//  REST API Routes
+// ═══════════════════════════════════════════════════════════════
+
+// التحقق من توفر اسم المستخدم (فوري)
+app.get('/api/check-username/:username', (req, res) => {
+  const { username } = req.params;
+  
+  if (!username || username.trim().length === 0) {
+    return res.status(400).json({ available: false, error: 'اسم المستخدم لا يمكن أن يكون فارغاً' });
+  }
+  
+  getUserByUsername(username, (err, user) => {
+    if (err) {
+      return res.status(500).json({ available: false, error: err.message });
+    }
+    
+    res.json({ 
+      available: !user,
+      username: username,
+      message: user ? 'هذا الاسم مستخدم بالفعل' : 'هذا الاسم متوفر'
+    });
+  });
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -272,6 +297,55 @@ io.on('connection', (socket) => {
         updateLastLogin(user.id, () => {
           console.log(`[login] تسجيل دخول: ${user.username}`);
           callback({ success: true, userId: user.id, username: user.username });
+
+          // أخبر الجميع بأن المستخدم متصل
+          io.emit('user_online', {
+            userId: user.id,
+            username: user.username,
+            timestamp: new Date()
+          });
+        });
+      }
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────
+  //  التحقق من مستخدم موجود بالاسم (للمستخدمين المسجلين)
+  // ─────────────────────────────────────────────────────────────
+  socket.on('reconnect_user', ({ username }, callback) => {
+    getUserByUsername(username, (err, user) => {
+      if (err || !user) {
+        callback({ success: false, error: 'هذا المستخدم غير موجود في النظام' });
+      } else {
+        devices.set(user.deviceId, { 
+          socketId: socket.id, 
+          userId: user.id, 
+          username: user.username 
+        });
+
+        socket.userId = user.id;
+        socket.username = user.username;
+        socket.deviceId = user.deviceId;
+
+        updateLastLogin(user.id, () => {
+          console.log(`[reconnect] إعادة اتصال: ${user.username}`);
+          callback({ 
+            success: true, 
+            userId: user.id, 
+            username: user.username,
+            deviceId: user.deviceId
+          });
+
+          // أخبر الجميع بأن المستخدم متصل
+          io.emit('user_online', {
+            userId: user.id,
+            username: user.username,
+            timestamp: new Date()
+          });
+        });
+      }
+    });
+  });
 
           // أخبر الجميع
           io.emit('user_online', {

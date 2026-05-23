@@ -411,38 +411,43 @@
         <h1>🌐 AirRoom</h1>
         <p class="subtitle">مشاركة الملفات بسهولة</p>
 
-        <!-- قسم التسجيل الجديد -->
-        <div id="registerSection">
-            <div class="form-group">
-                <label for="usernameInput">اسم المستخدم (فريد)</label>
-                <input type="text" id="usernameInput" placeholder="مثال: أحمد_الجهاز" maxlength="30">
-                <div id="usernameError" class="error"></div>
-            </div>
-
-            <button class="button" onclick="registerNewUser()">تسجيل حساب جديد</button>
-
-            <div class="toggle-mode">
-                لديك حساب بالفعل؟
-                <button onclick="toggleMode()">تسجيل الدخول</button>
-            </div>
-        </div>
-
-        <!-- قسم تسجيل الدخول -->
-        <div id="loginSection" style="display: none;">
-            <p style="color: #999; text-align: center; margin-bottom: 20px;">
-                معرّف الجهاز الخاص بك:
+        <!-- شاشة التسجيل الأول (اختيار اسم مستخدم فريد) -->
+        <div id="firstTimeScreen">
+            <p style="color: #666; text-align: center; margin-bottom: 20px; font-size: 13px;">
+                👋 مرحباً بك! هذا هو تسجيلك الأول
             </p>
             <div class="form-group">
-                <label for="deviceIdInput">معرّف الجهاز</label>
-                <input type="text" id="deviceIdInput" placeholder="الصق معرّفك هنا">
-                <div id="loginError" class="error"></div>
+                <label for="newUsernameInput">اختر اسم مستخدم فريد</label>
+                <input type="text" id="newUsernameInput" placeholder="مثال: أحمد_الجهاز" maxlength="30">
+                <div id="firstTimeError" class="error"></div>
+                <div id="firstTimeSuccess" class="success"></div>
             </div>
 
-            <button class="button" onclick="loginUser()">دخول</button>
+            <p style="color: #999; text-align: center; margin: 15px 0; font-size: 12px;">
+                ⚠️ لا يمكن تغيير هذا الاسم لاحقاً
+            </p>
+
+            <button class="button" id="registerFirstTimeBtn" onclick="registerFirstTime()" disabled>
+                إنشاء حساب جديد
+            </button>
+        </div>
+
+        <!-- شاشة تسجيل الدخول (للمستخدمين المسجلين) -->
+        <div id="loginExistingScreen" style="display: none;">
+            <p style="color: #666; text-align: center; margin-bottom: 20px; font-size: 13px;">
+                👋 مرحباً بعودتك!
+            </p>
+            <div class="form-group">
+                <label for="existingUsernameInput">أدخل اسم المستخدم</label>
+                <input type="text" id="existingUsernameInput" placeholder="اسم المستخدم الخاص بك">
+                <div id="loginExistingError" class="error"></div>
+            </div>
+
+            <button class="button" onclick="reconnectUser()">تسجيل الدخول</button>
 
             <div class="toggle-mode">
-                ليس لديك حساب؟
-                <button onclick="toggleMode()">تسجيل جديد</button>
+                أول مرة؟
+                <button onclick="switchToFirstTime()">إنشاء حساب جديد</button>
             </div>
         </div>
     </div>
@@ -510,12 +515,85 @@
         let selectedContactUsername;
 
         // ─────────────────────────────────────────────────────────────
-        // التسجيل والدخول
+        // التسجيل والدخول - النظام الجديد
         // ─────────────────────────────────────────────────────────────
 
-        function registerNewUser() {
-            const username = document.getElementById('usernameInput').value.trim();
-            const errorDiv = document.getElementById('usernameError');
+        // تهيئة شاشة المصادقة عند البداية
+        function initAuthScreen() {
+            const savedUsername = localStorage.getItem('airroom_username');
+            
+            if (savedUsername) {
+                // لديه حساب مسجل
+                switchToExistingUser();
+            } else {
+                // أول مرة
+                switchToFirstTime();
+            }
+        }
+
+        // التبديل إلى شاشة التسجيل الأول
+        function switchToFirstTime() {
+            document.getElementById('firstTimeScreen').style.display = 'block';
+            document.getElementById('loginExistingScreen').style.display = 'none';
+            document.getElementById('newUsernameInput').focus();
+            document.getElementById('firstTimeError').textContent = '';
+            document.getElementById('firstTimeSuccess').textContent = '';
+        }
+
+        // التبديل إلى شاشة المستخدم الموجود
+        function switchToExistingUser() {
+            document.getElementById('firstTimeScreen').style.display = 'none';
+            document.getElementById('loginExistingScreen').style.display = 'block';
+            document.getElementById('existingUsernameInput').focus();
+            document.getElementById('loginExistingError').textContent = '';
+        }
+
+        // التحقق الفوري من توفر اسم المستخدم
+        async function checkUsernameAvailability(username) {
+            if (!username || username.length < 3) {
+                document.getElementById('registerFirstTimeBtn').disabled = true;
+                document.getElementById('firstTimeSuccess').textContent = '';
+                return false;
+            }
+
+            try {
+                const response = await fetch(`/api/check-username/${encodeURIComponent(username)}`);
+                const data = await response.json();
+                
+                if (data.available) {
+                    document.getElementById('firstTimeError').textContent = '';
+                    document.getElementById('firstTimeSuccess').textContent = '✅ هذا الاسم متوفر!';
+                    document.getElementById('registerFirstTimeBtn').disabled = false;
+                    return true;
+                } else {
+                    document.getElementById('firstTimeError').textContent = '❌ هذا الاسم مستخدم بالفعل';
+                    document.getElementById('firstTimeSuccess').textContent = '';
+                    document.getElementById('registerFirstTimeBtn').disabled = true;
+                    return false;
+                }
+            } catch (error) {
+                document.getElementById('firstTimeError').textContent = 'خطأ في التحقق';
+                document.getElementById('registerFirstTimeBtn').disabled = true;
+                console.error('Error checking username:', error);
+                return false;
+            }
+        }
+
+        // إضافة listener للتحقق الفوري
+        document.addEventListener('DOMContentLoaded', () => {
+            const newUsernameInput = document.getElementById('newUsernameInput');
+            if (newUsernameInput) {
+                newUsernameInput.addEventListener('input', (e) => {
+                    checkUsernameAvailability(e.target.value.trim());
+                });
+            }
+        });
+
+        // تسجيل مستخدم جديد (أول مرة)
+        function registerFirstTime() {
+            const username = document.getElementById('newUsernameInput').value.trim();
+            const errorDiv = document.getElementById('firstTimeError');
+            const successDiv = document.getElementById('firstTimeSuccess');
 
             if (!username) {
                 errorDiv.textContent = "الرجاء إدخال اسم المستخدم";
@@ -527,62 +605,72 @@
                 return;
             }
 
+            // تعطيل الزر أثناء المعالجة
+            document.getElementById('registerFirstTimeBtn').disabled = true;
+            document.getElementById('registerFirstTimeBtn').textContent = 'جاري التسجيل...';
+
             socket.emit('register_new_user', { username }, (result) => {
                 if (result.success) {
                     currentUserId = result.userId;
                     currentUsername = result.username;
                     currentDeviceId = result.deviceId;
 
-                    // احفظ في localStorage
-                    localStorage.setItem('deviceId', result.deviceId);
-                    localStorage.setItem('username', result.username);
+                    // احفظ في localStorage - بدون الحاجة إلى deviceId
+                    localStorage.setItem('airroom_username', result.username);
 
-                    showApp();
-                    showNotification(`مرحباً ${result.username}! ✅`, 'success');
+                    successDiv.textContent = '✅ تم التسجيل بنجاح!';
+                    errorDiv.textContent = '';
+                    
+                    setTimeout(() => {
+                        showApp();
+                        showNotification(`مرحباً ${result.username}! 🎉`, 'success');
+                    }, 1000);
                 } else {
-                    errorDiv.textContent = result.error;
+                    errorDiv.textContent = result.error || 'فشل التسجيل';
+                    successDiv.textContent = '';
+                    document.getElementById('registerFirstTimeBtn').disabled = false;
+                    document.getElementById('registerFirstTimeBtn').textContent = 'إنشاء حساب جديد';
                 }
             });
         }
 
-        function loginUser() {
-            const deviceId = document.getElementById('deviceIdInput').value.trim();
-            const errorDiv = document.getElementById('loginError');
+        // تسجيل دخول مستخدم موجود
+        function reconnectUser() {
+            const username = document.getElementById('existingUsernameInput').value.trim();
+            const errorDiv = document.getElementById('loginExistingError');
 
-            if (!deviceId) {
-                errorDiv.textContent = "الرجاء إدخال معرّف الجهاز";
+            if (!username) {
+                errorDiv.textContent = "الرجاء إدخال اسم المستخدم";
                 return;
             }
 
-            socket.emit('login_user', { deviceId }, (result) => {
+            // تعطيل الزر أثناء المعالجة
+            const loginBtn = event.target;
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'جاري التحميل...';
+
+            socket.emit('reconnect_user', { username }, (result) => {
                 if (result.success) {
                     currentUserId = result.userId;
                     currentUsername = result.username;
-                    currentDeviceId = deviceId;
+                    currentDeviceId = result.deviceId;
 
-                    localStorage.setItem('deviceId', deviceId);
-                    localStorage.setItem('username', result.username);
+                    // احفظ في localStorage
+                    localStorage.setItem('airroom_username', result.username);
 
+                    errorDiv.textContent = '';
                     showApp();
-                    showNotification(`مرحباً ${result.username}! ✅`, 'success');
+                    showNotification(`مرحباً ${result.username}! 👋`, 'success');
                 } else {
-                    errorDiv.textContent = result.error;
+                    errorDiv.textContent = result.error || 'فشل تسجيل الدخول';
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = 'تسجيل الدخول';
                 }
             });
         }
 
-        function toggleMode() {
-            document.getElementById('registerSection').style.display = 
-                document.getElementById('registerSection').style.display === 'none' ? 'block' : 'none';
-            document.getElementById('loginSection').style.display = 
-                document.getElementById('loginSection').style.display === 'none' ? 'block' : 'none';
-            document.getElementById('usernameError').textContent = '';
-            document.getElementById('loginError').textContent = '';
-        }
-
         function logout() {
-            localStorage.removeItem('deviceId');
-            localStorage.removeItem('username');
+            localStorage.removeItem('airroom_username');
             location.reload();
         }
 
@@ -599,6 +687,12 @@
         // ─────────────────────────────────────────────────────────────
 
         socket = io();
+
+        // تهيئة شاشة المصادقة عند الاتصال
+        socket.on('connect', () => {
+            console.log('[Socket] متصل بالخادم');
+            initAuthScreen();
+        });
 
         socket.on('user_online', ({ userId, username }) => {
             updateContactStatus(userId, true, username);
